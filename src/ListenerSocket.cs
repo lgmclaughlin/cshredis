@@ -37,26 +37,28 @@ namespace CShredis
 		/// <summary>
 		/// Bind the socket to an endpoint and begin listening
 		/// </summary>
-		public void Bind(EndPoint endpoint, int backlog)
+		public void Bind(EndPoint endPoint, int backlog)
 		{
 			try
 			{
-				Sockaddr servAddr;
+				Sockaddr servAddr = null;
 				var filePath = string.Empty;
 
 				// Support only IP_V4 for now
 				// Revisit and add implementation for other families
 				var family = UnixAddressFamily.AF_INET;
 
-				servAddr = new SockaddrIn()
-				{
-					sa_family = UnixAddressFamily.AF_INET,
-					sin_family = UnixAddressFamily.AF_INET,
-					sin_addr = new InAddr() { s_addr = BitConverter.ToUInt32(endpoint.Address.GetAddressBytes(), 0) },
-					sin_port = Syscall.htons((ushort)endpoint.Port)
-				};
+				if (endPoint is IPEndPoint ipEndPoint) {
+					servAddr = new SockaddrIn()
+					{
+						sa_family = UnixAddressFamily.AF_INET,
+						sin_family = UnixAddressFamily.AF_INET,
+						sin_addr = new InAddr() { s_addr = BitConverter.ToUInt32(ipEndPoint.Address.GetAddressBytes(), 0) },
+						sin_port = Syscall.htons((ushort)ipEndPoint.Port)
+					};
 
-				SetupSocket(family);
+					SetupSocket(family);
+				}
 
 				int bind = Syscall.bind(_socket, servAddr);
 
