@@ -8,34 +8,35 @@ using Mono.Unix.Native;
 
 namespace CShredis
 {
-	public class ListenerSocket : IDisposable
+	public class Listener : IDisposable
 	{
-		private int _socket = -1;
+		private int _fd = -1;
 
-		public int Fd => _socket;
-
-		public ListenerSocket()
+		/// <summary>
+		/// Initializes a Listener.
+		/// </summary>
+		public Listener()
 		{
 		}
 		
 		/// <summary>
-		/// Prepares the socket with passed family
+		/// Prepares the socket with passed family.
 		/// </summary>
 		private void SetupSocket(UnixAddressFamily family)
 		{
-			if (_socket > -1)
+			if (_fd > -1)
 				throw new InvalidOperationException("The socket is already initialized.");
 
-			_socket = Syscall.socket(family, UnixSocketType.SOCK_STREAM, 0);
+			_fd = Syscall.socket(family, UnixSocketType.SOCK_STREAM, 0);
 
-			if (_socket < 0)
+			if (_fd < 0)
 				throw new IOException($"Failed to open socket: {Stdlib.GetLastError()}");
 
-			Syscall.setsockopt(_socket, UnixSocketProtocol.SOL_SOCKET, UnixSocketOptionName.SO_REUSEADDR, 1);
+			Syscall.setsockopt(_fd, UnixSocketProtocol.SOL_SOCKET, UnixSocketOptionName.SO_REUSEADDR, 1);
 		}
 
 		/// <summary>
-		/// Bind the socket to an endpoint and begin listening
+		/// Binds the socket to an endpoint and begins listening
 		/// </summary>
 		public void Bind(EndPoint endPoint, int backlog)
 		{
@@ -60,29 +61,29 @@ namespace CShredis
 					SetupSocket(family);
 				}
 
-				int bind = Syscall.bind(_socket, servAddr);
+				int bind = Syscall.bind(_fd, servAddr);
 
 				if (bind < 0)
 					throw new IOException($"Failed to bind to endpoint: {Stdlib.GetLastError()}");
 
-				int listen = Syscall.listen(_socket, backlog);
+				int listen = Syscall.listen(_fd, backlog);
 
 				if (listen < 0)
 					throw new IOException($"Failed to set socket to listen: {Stdlib.GetLastError()}");
 			}
 			catch
 			{
-				if (_socket != -1)
+				if (_fd != -1)
 				{
 					try
 					{ 
-						Syscall.close(_socket);
+						Syscall.close(_fd);
 					}
 					catch 
 					{
 					}
 
-					_socket = -1;
+					_fd = -1;
 				}
 
 				throw;
@@ -90,12 +91,12 @@ namespace CShredis
 		}
 
 		/// <summary>
-		/// Accept an incoming connection and return the file descriptor
+		/// Accepts an incoming connection and returns the file descriptor.
 		/// </summary>
 		public int Accept()
 		{
 			var addr = new SockaddrIn();
-			int fd = Syscall.accept(_socket, addr);
+			int fd = Syscall.accept(_fd, addr);
 
 			if (fd < 0)
 				throw new IOException($"Failed to accept: {Stdlib.GetLastError()}");
@@ -104,20 +105,14 @@ namespace CShredis
 		}
 		
 		/// <summary>
-		/// Close the socket
+		/// Closes the socket.
 		/// </summary>
-		public  void Dispose()
+		public void Dispose()
 		{
-			if (_socket != -1)
+			if (_fd >= 0)
 			{
-				try
-				{
-					Syscall.close(_socket);
-				}
-				finally	
-				{
-					_socket = -1;
-				}
+				try { Syscall.close(_fd); } catch { }
+				_fd = -1;
 			}
 		}
 	}
