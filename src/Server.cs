@@ -80,12 +80,12 @@ namespace CShredis
 		private void SetupListeners()
 		{
 			var ipv4Endpoint = new IPEndPoint(IPAddress.Any, PORT);
-			var ipv4Listener = new Listener();
-		
-			int ipv4ListenerFd = -1;
+			var ipv4Listener = new Listener();	
+			var ipv4ListenerFd = ipv4Listener.Fd;
+
 			try
 			{
-				ipv4ListenerFd = ipv4Listener.Bind(ipv4Endpoint, BACKLOG);
+				ipv4Listener.Bind(ipv4Endpoint, BACKLOG);
 
 				SetNonBlocking(ipv4ListenerFd);
 
@@ -257,7 +257,7 @@ namespace CShredis
 									client.Write();
 
 									// No writes queued, stop listening for write-ready
-									if (client.GetWriteQueueCount == 0)
+									if (client.GetWriteQueueCount() == 0)
 										ModifyFd(ev.fd, CLIENT_EVENTS);
 								}
 								catch (Exception ex)

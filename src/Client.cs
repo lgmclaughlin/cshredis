@@ -34,14 +34,22 @@ namespace CShredis
 		/// </summary>
 		public string Read()
 		{
-			var buffer = new byte[MAX_READ_SIZE];
-			long bytesRead = Syscall.read(_fd, buffer, (ulong)buffer.Length);
+			var readBytes = new byte[MAX_READ_SIZE];
+			long readCount;
 
-			if (bytesRead == 0)
+			unsafe
+			{
+				fixed (byte* readBytesPtr = readBytes)
+				{
+					readCount = Syscall.read(_fd, (IntPtr)readBytesPtr, (ulong)readBytes.Length);
+				}
+			}
+
+			if (readCount == 0)
 			{
 				return null;
 			}
-			else if (bytesRead < 0)
+			else if (readCount < 0)
 			{
 				var errno = Stdlib.GetLastError();
 				if (errno == Errno.EAGAIN || errno == Errno.EWOULDBLOCK)
@@ -50,7 +58,7 @@ namespace CShredis
 				throw new IOException($"Read from client {_fd} failed: {errno}");
 			}
 
-			return Encoding.UTF8.GetString(buffer, 0, (int)bytesRead);
+			return Encoding.UTF8.GetString(readBytes, 0, (int)readCount);
 		}
 
 		/// <summary>
@@ -65,11 +73,18 @@ namespace CShredis
 		{
 			while (_writeQueue.Count > 0)
 			{
-				byte[] responseBytes = _writeQueue.First.Value;
+				byte[] writeBytes = _writeQueue.First.Value;
+				long writeCount;
 
-				var bytesWritten = Syscall.write(_fd, responseBytes, (ulong)responseBytes.Length);
+				unsafe
+				{
+					fixed (byte* writeBytesPtr = writeBytes)
+					{
+						writeCount = Syscall.write(_fd, (IntPtr)writeBytesPtr, (ulong)writeBytes.Length);
+					}
+				}
 
-				if (bytesWritten < 0)
+				if (writeCount < 0)
 				{
 					var errno = Stdlib.GetLastError();
 					if (errno == Errno.EAGAIN || errno == Errno.EWOULDBLOCK)
@@ -77,9 +92,9 @@ namespace CShredis
 
 					throw new IOException($"Write to client {_fd} failed: {errno}");
 				}
-				else if (bytesWritten < responseBytes.Length)
+				else if (writeCount < writeBytes.Length)
 				{
-					_writeQueue.First.Value = responseBytes[bytesWritten..];
+					_writeQueue.First.Value = writeBytes[(int)writeCount..];
 					return;
 				}
 

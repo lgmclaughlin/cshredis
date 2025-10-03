@@ -12,6 +12,8 @@ namespace CShredis
 	{
 		private int _fd = -1;
 
+		public int Fd { get { return _fd; } }
+
 		/// <summary>
 		/// Initializes a Listener.
 		/// </summary>
@@ -36,7 +38,7 @@ namespace CShredis
 		}
 
 		/// <summary>
-		/// Binds the socket to an endpoint and begins listening
+		/// Binds the socket to an endpoint and begins listening.
 		/// </summary>
 		public void Bind(EndPoint endPoint, int backlog)
 		{
