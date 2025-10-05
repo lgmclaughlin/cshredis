@@ -6,7 +6,7 @@ using System.IO;
 using System.Net;
 using Mono.Unix.Native;
 
-namespace CShredis
+namespace CShredis.Core
 {
 	public class Listener : IDisposable
 	{

@@ -4,7 +4,7 @@ using System.Text;
 using System.Collections.Generic;
 using Mono.Unix.Native;
 
-namespace CShredis
+namespace CShredis.Core
 {
 	public class Client : IDisposable
 	{

@@ -9,7 +9,7 @@ using System.Threading;
 using System.Runtime.InteropServices;
 using Mono.Unix.Native;
 
-namespace CShredis
+namespace CShredis.Core
 {
 	public class Server
 	{
@@ -31,6 +31,8 @@ namespace CShredis
 		private Dictionary<int, Listener> _listeners = new Dictionary<int, Listener>();
 
 		private Dictionary<int, Client> _clients = new Dictionary<int, Client>();
+	
+		private bool _running = false;
 
 		/// <summary>
 		/// Initializes a Server
@@ -44,34 +46,52 @@ namespace CShredis
 		}
 
 		/// <summary>
-		/// Start the server. Sets up listeners and runs the event loop.
+		/// Starts the server. Sets up listeners and runs the event loop.
 		/// </summary>
 		public void Start()
 		{
 			try
 			{
 				Console.WriteLine($"Starting server on port {PORT}.");
+
+				_running = true;
 				SetupListeners();
 				RunEventLoop();
 			}	
 			finally
 			{
-				if (_epollFd >= 0)
-				{
-					try { Syscall.close(_epollFd); } catch { }
-					_epollFd = -1;
-				}
-
-				foreach (var listener in _listeners.Values)
-				{
-					try { listener.Dispose(); } catch { }
-				}
-
-				foreach (var client in _clients.Values)
-				{
-					try { client.Dispose(); } catch { }
-				}
+				Stop();
 			}
+		}
+
+		/// <summary>
+		/// Stops the server. Closes the epoll and disposes of all listeners and clients. 
+		/// </summary>
+		public void Stop()
+		{
+			if (!_running)
+				return;
+
+			_running = false;
+
+			if (_epollFd >= 0)
+			{
+				try { Syscall.close(_epollFd); } catch { }
+				_epollFd = -1;
+			}
+
+			foreach (var listener in _listeners.Values)
+			{
+				try { listener.Dispose(); } catch { }
+			}
+
+			foreach (var client in _clients.Values)
+			{
+				try { client.Dispose(); } catch { }
+			}
+
+			_listeners.Clear();
+			_clients.Clear();
 		}
 
 		/// <summary>
