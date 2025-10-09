@@ -14,20 +14,31 @@ namespace CShredis.Core
 				{
 					IsBackground = true
 				};
+
+				Console.WriteLine("Starting server...");
+
 				serverThread.Start();
 
-				Console.WriteLine("Server started. Press ESC to stop...");
-
-				while (true)
+				if (!Console.IsInputRedirected)
 				{
-					var key = Console.ReadKey(intercept: true);
-					if (key.Key == ConsoleKey.Escape)
-						break;
+					Console.WriteLine("Server started. Press ESC to stop...");
+
+					while (true)
+					{
+						var key = Console.ReadKey(intercept: true);
+						if (key.Key == ConsoleKey.Escape)
+							break;
+					}
+
+					Console.WriteLine("Stopping server...");
+					
+					server.Stop();
+				}
+				else
+				{
+					Console.WriteLine("Server started. Running in non-interactive mode.");
 				}
 
-				Console.WriteLine("Stopping server...");
-				
-				server.Stop();
 				serverThread.Join();
 
 				Console.WriteLine("Done.");

@@ -8,4 +8,4 @@
 
 set -e # Exit on failure
 
-dotnet build --configuration Release --output ../tmp/CShredis ../src/CShredis.Core/CShredis.Core.csproj
+dotnet build --configuration Release --output tmp/CShredis src/CShredis.Core/CShredis.Core.csproj
