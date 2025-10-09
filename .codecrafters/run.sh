@@ -8,4 +8,4 @@
 
 set -e # Exit on failure
 
-exec /tmp/codecrafters-build-redis-csharp/codecrafters-redis "$@"
+exec /tmp/CShredis/CShredis.Core "$@"

@@ -29,10 +29,14 @@ namespace CShredis.Core
 			if (_fd > -1)
 				throw new InvalidOperationException("The socket is already initialized.");
 
+			Console.WriteLine("Setting up listener socket.");
+
 			_fd = Syscall.socket(family, UnixSocketType.SOCK_STREAM, 0);
 
 			if (_fd < 0)
 				throw new IOException($"Failed to open socket: {Stdlib.GetLastError()}");
+
+			Console.WriteLine($"Setting socket options for socket fd {_fd}.");
 
 			Syscall.setsockopt(_fd, UnixSocketProtocol.SOL_SOCKET, UnixSocketOptionName.SO_REUSEADDR, 1);
 		}
@@ -42,6 +46,8 @@ namespace CShredis.Core
 		/// </summary>
 		public void Bind(EndPoint endPoint, int backlog)
 		{
+			Console.WriteLine($"Binding listener to endpoint with backlog {backlog}.");
+			
 			try
 			{
 				Sockaddr servAddr = null;
@@ -97,11 +103,15 @@ namespace CShredis.Core
 		/// </summary>
 		public int Accept()
 		{
+			Console.WriteLine("Listener accepting incoming connection.");
+
 			var addr = new SockaddrIn();
 			int fd = Syscall.accept(_fd, addr);
 
 			if (fd < 0)
 				throw new IOException($"Failed to accept: {Stdlib.GetLastError()}");
+
+			Console.WriteLine($"Connection successfully accepted with fd {fd}.");
 
 			return fd;
 		}

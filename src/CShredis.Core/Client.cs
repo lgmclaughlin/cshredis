@@ -37,12 +37,12 @@ namespace CShredis.Core
 			var readBytes = new byte[MAX_READ_SIZE];
 			long readCount;
 
+			Console.WriteLine("Reading from client.");
+
 			unsafe
 			{
 				fixed (byte* readBytesPtr = readBytes)
-				{
 					readCount = Syscall.read(_fd, (IntPtr)readBytesPtr, (ulong)readBytes.Length);
-				}
 			}
 
 			if (readCount == 0)
@@ -53,10 +53,14 @@ namespace CShredis.Core
 			{
 				var errno = Stdlib.GetLastError();
 				if (errno == Errno.EAGAIN || errno == Errno.EWOULDBLOCK)
+				{
+					Console.WriteLine("Read from client would block - returning.");
 					return string.Empty;
+				}
 
-				throw new IOException($"Read from client {_fd} failed: {errno}");
+				throw new IOException($"Reading from client {_fd} failed: {errno}");
 			}
+Console.WriteLine("Read from client succesful.");
 
 			return Encoding.UTF8.GetString(readBytes, 0, (int)readCount);
 		}
@@ -71,6 +75,8 @@ namespace CShredis.Core
 		/// </summary>
 		public void Write()
 		{
+			Console.WriteLine("Writing messages back to client.");
+			
 			while (_writeQueue.Count > 0)
 			{
 				byte[] writeBytes = _writeQueue.First.Value;
@@ -79,16 +85,17 @@ namespace CShredis.Core
 				unsafe
 				{
 					fixed (byte* writeBytesPtr = writeBytes)
-					{
 						writeCount = Syscall.write(_fd, (IntPtr)writeBytesPtr, (ulong)writeBytes.Length);
-					}
 				}
 
 				if (writeCount < 0)
 				{
 					var errno = Stdlib.GetLastError();
 					if (errno == Errno.EAGAIN || errno == Errno.EWOULDBLOCK)
+					{
+						Console.WriteLine("Writing to client would block - returning.");
 						return;
+					}
 
 					throw new IOException($"Write to client {_fd} failed: {errno}");
 				}
@@ -99,6 +106,8 @@ namespace CShredis.Core
 				}
 
 				_writeQueue.RemoveFirst();
+
+				Console.WriteLine($"Write to client successful. Messages remaining in queue: {_writeQueue.Count}"); 
 			}
 		}
 

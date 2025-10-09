@@ -15,6 +15,8 @@ namespace CShredis.Core
 	{
 		private static readonly EpollEvents LISTENER_EVENTS = EpollEvents.EPOLLIN;
 
+		private static readonly EpollEvents WAKE_UP_READ_EVENTS = EpollEvents.EPOLLIN;
+
 		private static readonly EpollEvents CLIENT_EVENTS = 
 											EpollEvents.EPOLLIN  |
 											EpollEvents.EPOLLHUP |
@@ -28,6 +30,10 @@ namespace CShredis.Core
 
 		private int _epollFd;
 
+		private int _wakeUpWriteFd;
+
+		private int _wakeUpReadFd;
+
 		private Dictionary<int, Listener> _listeners = new Dictionary<int, Listener>();
 
 		private Dictionary<int, Client> _clients = new Dictionary<int, Client>();
@@ -39,10 +45,14 @@ namespace CShredis.Core
 		/// </summary>
 		public Server()
 		{
+			Console.WriteLine("Creating epoll.");
+
 			_epollFd = Syscall.epoll_create(1);
 
 			if (_epollFd < 0)
 				throw new IOException($"Call to {nameof(Syscall.epoll_create)} failed with code: {Stdlib.GetLastError()}");
+
+			Console.WriteLine($"Epoll created successfully with fd {_epollFd}.");
 		}
 
 		/// <summary>
@@ -55,6 +65,7 @@ namespace CShredis.Core
 				Console.WriteLine($"Starting server on port {PORT}.");
 
 				_running = true;
+				SetupWakeUpPipe();
 				SetupListeners();
 				RunEventLoop();
 			}	
@@ -72,7 +83,11 @@ namespace CShredis.Core
 			if (!_running)
 				return;
 
+			Console.WriteLine("Stopping server.");
+
 			_running = false;
+
+			WakeUpPoll();
 
 			if (_epollFd >= 0)
 			{
@@ -92,6 +107,25 @@ namespace CShredis.Core
 
 			_listeners.Clear();
 			_clients.Clear();
+
+			Console.WriteLine("Server stopped.");
+		}
+
+		private void SetupWakeUpPipe()
+		{
+			Console.WriteLine("Setting up wake up pipe.");
+
+			var pipeFds = new int[2];
+			var ret = Syscall.pipe(pipeFds);
+			if (ret < 0)
+				throw new IOException($"Call to {nameof(Syscall.pipe)} failed with code {ret}: {Stdlib.GetLastError()}");
+
+			_wakeUpReadFd = pipeFds[0];
+			_wakeUpWriteFd = pipeFds[1];
+
+			Console.WriteLine($"Wake up pipe successfully set up with read fd {_wakeUpReadFd} and write fd {_wakeUpWriteFd}.");
+
+			RegisterFd(_wakeUpReadFd, WAKE_UP_READ_EVENTS);
 		}
 
 		/// <summary>
@@ -99,28 +133,31 @@ namespace CShredis.Core
 		/// </summary>
 		private void SetupListeners()
 		{
+			Console.WriteLine("Setting up listeners.");
+
 			var ipv4Endpoint = new IPEndPoint(IPAddress.Any, PORT);
-			var ipv4Listener = new Listener();	
-			var ipv4ListenerFd = ipv4Listener.Fd;
+			var ipv4Listener = new Listener();
 
 			try
 			{
 				ipv4Listener.Bind(ipv4Endpoint, BACKLOG);
 
-				SetNonBlocking(ipv4ListenerFd);
+				SetNonBlocking(ipv4Listener.Fd);
 
-				RegisterFd(ipv4ListenerFd, LISTENER_EVENTS);
+				RegisterFd(ipv4Listener.Fd, LISTENER_EVENTS);
 
-				_listeners[ipv4ListenerFd] = ipv4Listener;
+				_listeners[ipv4Listener.Fd] = ipv4Listener;
 			}
 			catch
 			{
-				if (ipv4ListenerFd >= 0)
+				if (ipv4Listener.Fd >= 0)
 				{
-					try { Syscall.close(ipv4ListenerFd); } catch { }
+					try { Syscall.close(ipv4Listener.Fd); } catch { }
 				}
 				throw;
 			}
+
+			Console.WriteLine("Listeners set up successfully.");
 		}
 
 		/// <summary>
@@ -128,15 +165,19 @@ namespace CShredis.Core
 		/// </summary>
 		private void SetNonBlocking(int fd)
 		{
+			Console.WriteLine($"Setting fd {fd} to nonblocking.");
+
 			int opts = Syscall.fcntl(fd, FcntlCommand.F_GETFL);
 			if (opts < 0)
-				throw new IOException($"Failed to get openflags for fd: {Stdlib.GetLastError()}");
+				throw new IOException($"Failed to get openflags for fd {fd}: {Stdlib.GetLastError()}");
 
 			opts |= (int)OpenFlags.O_NONBLOCK;
 
 			int ret = Syscall.fcntl(fd, FcntlCommand.F_SETFL, opts);
 			if (ret < 0)
 				throw new IOException($"Failed to set socket O_NONBLOCK: {Stdlib.GetLastError()}"); 
+		
+			Console.WriteLine($"Successfully set fd {fd} to nonblocking.");
 		}
 
 		/// <summary>
@@ -149,6 +190,8 @@ namespace CShredis.Core
 				fd = fd,
 				events = events
 			};
+
+			Console.WriteLine($"Modifying epoll events and operation for fd {fd}, events {events}, and operation {op}.");
 
 			var ret = Syscall.epoll_ctl(_epollFd, op, fd, ref ev);
 			if (ret < 0)
@@ -177,11 +220,15 @@ namespace CShredis.Core
 		{
 			try
 			{
+				Console.WriteLine($"Handling new client with fd {fd}.");
+
 				SetNonBlocking(fd);
 				RegisterFd(fd, CLIENT_EVENTS);
 
 				var client = new Client(fd);
 				_clients[fd] = client;
+
+				Console.WriteLine($"Succesfully handled new client with fd {fd}.");
 			}
 			catch
 			{
@@ -192,9 +239,43 @@ namespace CShredis.Core
 
 		private void RemoveClient(Client client)
 		{
+			Console.WriteLine($"Removing client with fd {client.Fd}."); 
+
 			DeregisterFd(client.Fd);
 			_clients.Remove(client.Fd);
 			client.Dispose();
+		}
+
+		/// <summary>
+		/// Wakes up the epoll_wait with a write to the wake up pipe. 
+		/// </summary>
+		private void WakeUpPoll()
+		{
+			Console.WriteLine("Waking up poll.");
+
+			var writeBytes = new byte[1] { 1 };
+
+			unsafe
+			{
+				fixed (byte* writeBytesPtr = writeBytes)
+					_ = Syscall.write(_wakeUpWriteFd, (IntPtr)writeBytesPtr, 1);
+			}
+		}
+
+		/// <summary>
+		/// Empties the wake up pipe after receiving a wake up. 
+		/// </summary>
+		private void EmptyWakeUpPipe()
+		{
+			Console.WriteLine("Wake up received. Emptying wake up pipe.");
+
+			var readBytes = new byte[1];
+
+			unsafe
+			{
+				fixed (byte* readBytesPtr = readBytes)
+					_ = Syscall.read(_wakeUpReadFd, (IntPtr)readBytesPtr, 1);
+			}
 		}
 
 		/// <summary>
@@ -203,28 +284,32 @@ namespace CShredis.Core
 		private void RunEventLoop()
 		{
 			var events = new EpollEvent[MAX_EVENTS];
-			var running = true;
-			
+
 			try
 			{
-				while (running)
+				while (_running)
 				{
-					Debug.WriteLine("Waiting for epoll socket.");
+					Console.WriteLine("Waiting for epoll socket.");
 					var count = Syscall.epoll_wait(_epollFd, events, events.Length, -1);
 
 					if (count < 0)
 					{
-						Debug.WriteLine($"Invalid event count returned from {nameof(Syscall.epoll_wait)}. Stopping.");
-						running = false;
+						Console.WriteLine($"Invalid event count returned from {nameof(Syscall.epoll_wait)}. Stopping.");
+						_running = false;
 						break;
 					}
 
 					for (int i = 0; i < count; i++)
 					{
 						var ev = events[i];
-						Debug.WriteLine($"Epoll[{i}] got events {ev.events} from fd {ev.fd}");
+						Console.WriteLine($"Epoll[{i}] got events {ev.events} from fd {ev.fd}");
 
-						if (_listeners.TryGetValue(ev.fd, out Listener listener))
+						if (ev.fd == _wakeUpReadFd)
+						{
+							EmptyWakeUpPipe();
+							break;
+						}
+						else if (_listeners.TryGetValue(ev.fd, out Listener listener))
 						{
 							try
 							{
@@ -234,12 +319,11 @@ namespace CShredis.Core
 							}
 							catch (Exception ex)
 							{
-								Debug.WriteLine($"Failed to accept new client: {ex}");
+								Console.WriteLine($"Failed to accept new client: {ex}");
 							}
 						}
 						else if (_clients.TryGetValue(ev.fd, out Client client))
 						{
-							// Read ready
 							if ((ev.events & EpollEvents.EPOLLIN) != 0)
 							{
 								try
@@ -247,7 +331,9 @@ namespace CShredis.Core
 									string data = client.Read();
 									if (!string.IsNullOrEmpty(data))
 									{
-										Debug.WriteLine($"Received from client fd {ev.fd}: {data}");
+										string escapedData = data.Replace("\r", "\\r").Replace("\n", "\\n");
+										Console.WriteLine($@"Received from client fd {ev.fd}: {escapedData}");
+
 										client.EnqueueResponseToWriteQueue("+PONG\r\n");
 
 										// Client previously had 0 responses queued and was
@@ -257,19 +343,17 @@ namespace CShredis.Core
 									}
 									else if (data == null)
 									{
-										Debug.WriteLine($"Clien with fd {ev.fd} closed connection. Removing client.");
+										Console.WriteLine($"Client with fd {ev.fd} closed connection. Removing client.");
 										RemoveClient(client);
 										continue;
 									}
 								}
 								catch (Exception ex)
 								{
-									Debug.WriteLine($"Error reading from client fd {ev.fd}: {ex}");
+									Console.WriteLine($"Error reading from client fd {ev.fd}: {ex}");
 									RemoveClient(client);
 								}
 							}
-
-							// Write ready
 							if ((ev.events & EpollEvents.EPOLLOUT) != 0)
 							{
 								try
@@ -282,34 +366,32 @@ namespace CShredis.Core
 								}
 								catch (Exception ex)
 								{
-									Debug.WriteLine($"Error writing to client fd {ev.fd}: {ex}");
+									Console.WriteLine($"Error writing to client fd {ev.fd}: {ex}");
 									RemoveClient(client);
 								}
 							}
 
-							// Client disconnect
 							if ((ev.events & EpollEvents.EPOLLHUP) != 0 || (ev.events & EpollEvents.EPOLLRDHUP) != 0)
 							{
-								Debug.WriteLine($"Client fd {ev.fd} disconnected.");
+								Console.WriteLine($"Client fd {ev.fd} disconnected.");
 								RemoveClient(client);
 							}
 						}
 						else
 						{
-							Debug.WriteLine($"Unknown fd {ev.fd} with events {ev.events}");
+							Console.WriteLine($"Unknown fd {ev.fd} with events {ev.events}");
 						}
 					}
 				}
 			}
 			catch (Exception ex)
 			{
-				Debug.WriteLine("Event Loop crashed.");
-				Debug.WriteLine(ex.ToString());
-				Debug.Flush();
+				Console.WriteLine("Event Loop crashed.");
+				Console.WriteLine(ex.ToString());
 			}
 			finally
 			{
-				Debug.WriteLine("Event Loop stopping.");
+				Console.WriteLine("Event Loop stopping.");
 				if (_epollFd >= 0) {
 					try { Syscall.close(_epollFd); } catch { }
 					_epollFd = -1;
