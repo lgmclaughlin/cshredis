@@ -9,7 +9,7 @@ using System.Threading;
 using System.Runtime.InteropServices;
 using Mono.Unix.Native;
 
-namespace CShredis.Core
+namespace CShredis.Network
 {
 	public class Server
 	{

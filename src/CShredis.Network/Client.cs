@@ -4,7 +4,7 @@ using System.Text;
 using System.Collections.Generic;
 using Mono.Unix.Native;
 
-namespace CShredis.Core
+namespace CShredis.Network
 {
 	public class Client : IDisposable
 	{
@@ -60,7 +60,8 @@ namespace CShredis.Core
 
 				throw new IOException($"Reading from client {_fd} failed: {errno}");
 			}
-Console.WriteLine("Read from client succesful.");
+
+			Console.WriteLine("Read from client succesful.");
 
 			return Encoding.UTF8.GetString(readBytes, 0, (int)readCount);
 		}

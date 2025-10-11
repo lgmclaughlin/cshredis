@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\CShredis.Core\CShredis.Core.csproj" />
+    <ProjectReference Include="..\..\src\CShredis.Network\CShredis.Network.csproj" />
   </ItemGroup>
 
 </Project>

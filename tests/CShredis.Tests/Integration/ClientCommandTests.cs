@@ -3,7 +3,7 @@ using System.Text;
 using System.Threading;
 using Xunit;
 using System.Net.Sockets;
-using CShredis.Core;
+using CShredis.Network;
 
 namespace CShredis.Tests
 {

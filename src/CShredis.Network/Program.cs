@@ -1,7 +1,7 @@
 using System;
 using System.Threading;
 
-namespace CShredis.Core
+namespace CShredis.Network
 {
 	class Program
 	{
