@@ -6,9 +6,14 @@ using Utils = CShredis.RESP.Tests.HandlerTestUtilities;
 
 namespace CShredis.RESP.Tests
 {
-	public class BulkStringParseHandlerTests
+	public class BulkStringParseHandlerTests : IDisposable
 	{
-		private BulkStringParseHandler _handler = new();
+		private BulkStringParseHandler _handler;
+
+		public BulkStringParseHandlerTests()
+		{
+			_handler = new();
+		}
 
 		[Fact]
 		public void ValidHey_ReturnsHeyBulkString()
@@ -139,6 +144,51 @@ namespace CShredis.RESP.Tests
 		}
 
 		[Fact]
+		public void PartialBulkStringWithMultipleCompletingMessages_ReturnsCompleteBulkString()
+		{
+			ReadOnlyMemory<byte> dataPartial = Utils.StringToMemoryBytes("$8\r\nhe");
+			var expectedStatus = ParseStatus.Partial;
+			var expectedBytesConsumed = dataPartial.Length;
+			var expectedBytesMissing = 8;
+
+			ParseResult parsedPartialResult1 = _handler.Parse(dataPartial);
+
+			var parsedPartialBulkString1 = Assert.IsType<RESPBulkString>(parsedPartialResult1.ParsedObject);
+			Assert.False(parsedPartialBulkString1.IsComplete);
+			Assert.Equal(expectedBytesConsumed, parsedPartialResult1.BytesConsumed);
+			Assert.Equal(expectedBytesMissing, parsedPartialBulkString1.BytesMissing);
+			Assert.Equal(expectedStatus, parsedPartialResult1.Status);
+
+			dataPartial = Utils.StringToMemoryBytes("ada");
+			expectedStatus = ParseStatus.Partial;
+			expectedBytesConsumed = dataPartial.Length;
+			expectedBytesMissing = 5;
+
+			ParseResult parsedPartialResult2 = _handler.ContinueParse(dataPartial, parsedPartialBulkString1);
+
+			var parsedPartialBulkString2 = Assert.IsType<RESPBulkString>(parsedPartialResult2.ParsedObject);
+			Assert.False(parsedPartialBulkString2.IsComplete);
+			Assert.Equal(expectedBytesConsumed, parsedPartialResult2.BytesConsumed);
+			Assert.Equal(expectedBytesMissing, parsedPartialBulkString2.BytesMissing);
+			Assert.Equal(expectedStatus, parsedPartialResult2.Status);
+
+			ReadOnlyMemory<byte> dataFinal = Utils.StringToMemoryBytes("che\r\n");
+			ReadOnlyMemory<byte> expectedData = Utils.StringToMemoryBytes("headache");
+			expectedStatus = ParseStatus.Complete;
+			expectedBytesConsumed = dataFinal.Length;
+			expectedBytesMissing = 0;
+
+			ParseResult parsedResult = _handler.ContinueParse(dataFinal, parsedPartialBulkString2);
+
+			var parsedBulkString = Assert.IsType<RESPBulkString>(parsedResult.ParsedObject);
+			Assert.True(parsedBulkString.IsComplete);
+			Assert.True(parsedBulkString.Value.Span.SequenceEqual(expectedData.Span));
+			Assert.Equal(expectedBytesConsumed, parsedResult.BytesConsumed);
+			Assert.Equal(expectedBytesMissing, parsedBulkString.BytesMissing);
+			Assert.Equal(expectedStatus, parsedResult.Status);
+		}
+
+		[Fact]
 		public void MismatchedLength_ReturnsPartialBulkString()
 		{
 			ReadOnlyMemory<byte> data = Utils.StringToMemoryBytes("$5\r\nhey\r\n");
@@ -173,6 +223,11 @@ namespace CShredis.RESP.Tests
 			ReadOnlyMemory<byte> data = Utils.StringToMemoryBytes(input);
 
 			Assert.Throws<InvalidOperationException>(() => _handler.Parse(data));
+		}
+
+		public void Dispose()
+		{
+			_handler = null;
 		}
 	}
 }

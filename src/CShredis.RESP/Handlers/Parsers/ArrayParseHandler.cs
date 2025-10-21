@@ -5,9 +5,12 @@ namespace CShredis.RESP
 {
 	public class ArrayParseHandler : IParseHandler, IPartialParseHandler
 	{
-		private static readonly ParseDispatcher _dispatcher = new ParseDispatcher();
+		private readonly ParseDispatcher _dispatcher;
 
-		public ArrayParseHandler() { }
+		public ArrayParseHandler(ParseDispatcher dispatcher)
+		{
+			_dispatcher = dispatcher;
+		}
 
 		public ParseResult Parse(ReadOnlyMemory<byte> data)
 		{
@@ -34,7 +37,6 @@ namespace CShredis.RESP
 
 		private ParseResult ParseElements(ReadOnlyMemory<byte> data, RESPArray respArray, int offset = 0)
 		{
-			Console.WriteLine($"***** Elements to Parse: {respArray.DeclaredLength - respArray.Count}, Data: {Encoding.UTF8.GetString(data.Span)}");
 			if (respArray.Partial != null)
 			{
 				var completedPartialParseResult = _dispatcher.ContinueParse(data, respArray.Partial);

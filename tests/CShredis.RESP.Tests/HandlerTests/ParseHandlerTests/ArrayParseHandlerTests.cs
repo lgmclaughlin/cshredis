@@ -6,9 +6,16 @@ using Utils = CShredis.RESP.Tests.HandlerTestUtilities;
 
 namespace CShredis.RESP.Tests
 {
-	public class ArrayParseHandlerTests
+	public class ArrayParseHandlerTests : IDisposable
 	{
-		private ArrayParseHandler _handler = new();
+		private ParseDispatcher _dispatcher;
+		private ArrayParseHandler _handler;
+
+		public ArrayParseHandlerTests()
+		{
+			_dispatcher = new();
+			_handler = new(_dispatcher);
+		}
 
 		[Theory]
 		[InlineData("*1\r\n$3\r\nhey\r\n", 1)]
@@ -73,7 +80,7 @@ namespace CShredis.RESP.Tests
 		}
 
 		[Fact]
-		public void PartialArrayWithMultipleCompletingMessage_ReturnsCompleteArray()
+		public void PartialArrayWithMultipleCompletingMessages_ReturnsCompleteArray()
 		{
 			ReadOnlyMemory<byte> dataPartial = Utils.StringToMemoryBytes("*3\r\n$3\r\nhey\r");
 			var expectedStatus = ParseStatus.Partial;
@@ -126,7 +133,7 @@ namespace CShredis.RESP.Tests
 		{
 			ReadOnlyMemory<byte> data = Utils.StringToMemoryBytes(input);
 			var expectedStatus = ParseStatus.Partial;
-
+			
 			ParseResult parsedResult = _handler.Parse(data);
 
 			var parsedArray = Assert.IsType<RESPArray>(parsedResult.ParsedObject);
@@ -134,6 +141,11 @@ namespace CShredis.RESP.Tests
 			Assert.Equal(expectedBytesConsumed, parsedResult.BytesConsumed);
 			Assert.Equal(expectedCount, parsedArray.Count);
 			Assert.Equal(expectedStatus, parsedResult.Status);
+		}
+
+		public void Dispose()
+		{
+			_handler = null;
 		}
 	}
 }

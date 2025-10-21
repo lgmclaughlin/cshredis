@@ -13,7 +13,7 @@ namespace CShredis.RESP
 		{
 			_handlers = new Dictionary<byte, IParseHandler> ()
 			{
-				{ RESPType.Array.Qualifier(), new ArrayParseHandler() },
+				{ RESPType.Array.Qualifier(), new ArrayParseHandler(this) },
 				{ RESPType.BulkString.Qualifier(), new BulkStringParseHandler() }
 			};
 		}
@@ -22,7 +22,7 @@ namespace CShredis.RESP
 		{
 			if (data.IsEmpty)
 				throw new ArgumentException("Data cannot be null or empty.", nameof(data));
-			
+
 			if (_partial != null)
 			{
 				return ContinueParse(data, _partial);
@@ -39,18 +39,25 @@ namespace CShredis.RESP
 
 			if (!_handlers.TryGetValue(type, out var handler))
 				throw new InvalidOperationException($"Unknown RESP type '{(char)type}'");
+
+			var parseResult = handler.Parse(data);
+
+			if (parseResult.Status == ParseStatus.Partial)
+				_partial = parseResult.ParsedObject;
 			
-			return handler.Parse(data);
+			return parseResult;
 		}
 
 		public ParseResult ContinueParse(ReadOnlyMemory<byte> data, RESPObject partial)
 		{
+			_partial = null;
+
 			var handler = (IPartialParseHandler)_handlers[partial.Type.Qualifier()];
 
 			var parseResult = handler.ContinueParse(data, partial);
 
-			if (parseResult.Status == ParseStatus.Complete)
-				_partial = null;
+			if (parseResult.Status == ParseStatus.Partial)
+				_partial = parseResult.ParsedObject;
 
 			return parseResult;
 		}
