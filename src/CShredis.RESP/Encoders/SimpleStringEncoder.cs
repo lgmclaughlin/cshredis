@@ -2,7 +2,7 @@ using System;
 
 namespace CShredis.RESP
 {
-	public class SimpleStringEncodeHandler
+	public class SimpleStringEncoder
 	{
 		public RESPSimpleString Encode(string value)
 		{

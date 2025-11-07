@@ -3,11 +3,11 @@ using System.Text;
 
 namespace CShredis.RESP
 {
-	public class ArrayParseHandler : IParseHandler, IPartialParseHandler
+	public class ArrayParser : IParser, IPartialParser
 	{
 		private readonly ParseDispatcher _dispatcher;
 
-		public ArrayParseHandler(ParseDispatcher dispatcher)
+		public ArrayParser(ParseDispatcher dispatcher)
 		{
 			_dispatcher = dispatcher;
 		}

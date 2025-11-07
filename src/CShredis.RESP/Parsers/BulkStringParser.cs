@@ -1,8 +1,8 @@
 namespace CShredis.RESP
 {
-	public class BulkStringParseHandler : IParseHandler, IPartialParseHandler
+	public class BulkStringParser : IParser, IPartialParser
 	{
-		public BulkStringParseHandler() { }
+		public BulkStringParser() { }
 
 		public ParseResult Parse(ReadOnlyMemory<byte> data)
 		{

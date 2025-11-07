@@ -5,16 +5,16 @@ namespace CShredis.RESP
 {
 	public class ParseDispatcher
 	{
-		private readonly Dictionary<byte, IParseHandler> _handlers; 
+		private readonly Dictionary<byte, IParser> _parsers; 
 
 		private RESPObject? _partial;
 
 		public ParseDispatcher()
 		{
-			_handlers = new Dictionary<byte, IParseHandler> ()
+			_parsers = new Dictionary<byte, IParser> ()
 			{
-				{ RESPType.Array.Qualifier(), new ArrayParseHandler(this) },
-				{ RESPType.BulkString.Qualifier(), new BulkStringParseHandler() }
+				{ RESPType.Array.Qualifier(), new ArrayParser(this) },
+				{ RESPType.BulkString.Qualifier(), new BulkStringParser() }
 			};
 		}
 
@@ -37,10 +37,10 @@ namespace CShredis.RESP
 		{
 			byte type = data.Span[0];
 
-			if (!_handlers.TryGetValue(type, out var handler))
+			if (!_parsers.TryGetValue(type, out var parser))
 				throw new InvalidOperationException($"Unknown RESP type '{(char)type}'");
 
-			var parseResult = handler.Parse(data);
+			var parseResult = parser.Parse(data);
 
 			if (parseResult.Status == ParseStatus.Partial)
 				_partial = parseResult.ParsedObject;
@@ -52,9 +52,9 @@ namespace CShredis.RESP
 		{
 			_partial = null;
 
-			var handler = (IPartialParseHandler)_handlers[partial.Type.Qualifier()];
+			var parser = (IPartialParser)_parsers[partial.Type.Qualifier()];
 
-			var parseResult = handler.ContinueParse(data, partial);
+			var parseResult = parser.ContinueParse(data, partial);
 
 			if (parseResult.Status == ParseStatus.Partial)
 				_partial = parseResult.ParsedObject;

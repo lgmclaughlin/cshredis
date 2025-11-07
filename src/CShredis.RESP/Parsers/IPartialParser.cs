@@ -1,6 +1,6 @@
 namespace CShredis.RESP
 {
-	public interface IPartialParseHandler
+	public interface IPartialParser
 	{
 		public ParseResult ContinueParse(ReadOnlyMemory<byte> data, RESPObject partial);
 	}
