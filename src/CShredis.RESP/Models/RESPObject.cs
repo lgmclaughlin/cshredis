@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace CShredis.RESP
 {
 	public abstract record RESPObject
@@ -5,9 +7,14 @@ namespace CShredis.RESP
 		public abstract RESPType Type { get; }
 	}
 
+	public abstract record RESPError : RESPObject;
+
 	public sealed record RESPSimpleString(ReadOnlyMemory<byte> Value) : RESPObject
 	{
 		public override RESPType Type => RESPType.SimpleString;
+
+		public RESPSimpleString(string value)
+			: this(Encoding.UTF8.GetBytes(value).AsMemory()) { }
 	}
 
 	public sealed record RESPBulkString : RESPObject
@@ -45,6 +52,9 @@ namespace CShredis.RESP
 			}
 		}
 
+		public RESPBulkString(string value)
+			: this(Encoding.UTF8.GetBytes(value).AsMemory(), value.Length) { }
+
 		public void Append(ReadOnlyMemory<byte> data)
 		{
 			if (IsComplete)
@@ -79,16 +89,22 @@ namespace CShredis.RESP
 	public sealed record RESPNullBulkString() : RESPObject
 	{
 		public override RESPType Type => RESPType.NullBulkString;
+
 	}
 
 	public sealed record RESPInteger(ReadOnlyMemory<byte> Value) : RESPObject
 	{
 		public override RESPType Type => RESPType.Integer;
+
+		public RESPInteger(long value) : this(BitConverter.GetBytes(value).AsMemory()) { }
 	}
 
 	public sealed record RESPArray(List<RESPObject> Elements, int DeclaredLength) : RESPObject
 	{
 		public override RESPType Type => RESPType.Array;
+
+		public RESPArray(List<RESPObject> Elements)
+			: this(Elements, Elements.Count) { }
 
 		private RESPObject? _partial;
 
@@ -111,13 +127,19 @@ namespace CShredis.RESP
 		public override RESPType Type => RESPType.NullArray;
 	}
 
-	public sealed record RESPSimpleError(ReadOnlyMemory<byte>  Value) : RESPObject
+	public sealed record RESPSimpleError(ReadOnlyMemory<byte> Value) : RESPError
 	{
 		public override RESPType Type => RESPType.SimpleError;
+		
+		public RESPSimpleError(string value)
+			: this(Encoding.UTF8.GetBytes(value).AsMemory()) { }
 	}
 
-	public sealed record RESPBulkError(ReadOnlyMemory<byte>  Value) : RESPObject
+	public sealed record RESPBulkError(ReadOnlyMemory<byte> Value) : RESPError
 	{
 		public override RESPType Type => RESPType.BulkError;
+
+		public RESPBulkError(string value)
+			: this(Encoding.UTF8.GetBytes(value).AsMemory()) { }
 	}
 }
