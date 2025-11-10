@@ -2,7 +2,7 @@ using CShredis.RESP;
 
 namespace CShredis.Commands
 {
-	public interface ICommandHandler
+	public interface ICommand
 	{
 		public CommandResult Execute(CommandEnvelope commandEnvelope);
 	}
