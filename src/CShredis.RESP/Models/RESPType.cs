@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace CShredis.RESP
 {
 	public enum RESPType
@@ -17,6 +19,8 @@ namespace CShredis.RESP
 		private static readonly string[] _names = Enum.GetNames(typeof(RESPType));
 
 		public static string Name(this RESPType type) => _names[(int)type];
+
+		public static string QualifierString(this RESPType type) => ((char)type.Qualifier()).ToString();
 
 		public static byte Qualifier(this RESPType type) => type switch
 		{

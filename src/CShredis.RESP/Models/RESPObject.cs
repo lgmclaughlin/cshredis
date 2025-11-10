@@ -7,6 +7,8 @@ namespace CShredis.RESP
 		public abstract RESPType Type { get; }
 
 		public abstract ReadOnlyMemory<byte> Encode();
+
+		public abstract string EncodeString();
 	}
 
 	public abstract record RESPError : RESPObject;

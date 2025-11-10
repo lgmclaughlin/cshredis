@@ -6,6 +6,9 @@ namespace CShredis.RESP
 	{
 		public override RESPType Type => RESPType.NullArray;
 
-		public override ReadOnlyMemory<byte> Encode() => ReadOnlyMemory<byte>.Empty;
+		public override ReadOnlyMemory<byte> Encode()
+			=> Encoding.UTF8.GetBytes(EncodeString()).AsMemory();
+
+		public override string EncodeString() => "";
 	}
 }

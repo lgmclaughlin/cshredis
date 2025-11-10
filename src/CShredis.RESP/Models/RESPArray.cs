@@ -20,7 +20,21 @@ namespace CShredis.RESP
 		public RESPArray(int declaredLength)
 			: this(new List<RESPObject>(declaredLength), declaredLength) { }
 
-		public override ReadOnlyMemory<byte> Encode() => ReadOnlyMemory<byte>.Empty;
+		public override ReadOnlyMemory<byte> Encode() =>
+			Encoding.UTF8.GetBytes(EncodeString()).AsMemory();
+
+		public override string EncodeString()
+		{
+			var encodedPrefix = Type.QualifierString() + Count.ToString() + "\r\n";
+			var encodedArray = "";	
+			
+			foreach (var el in Elements)
+			{
+				encodedArray += el.EncodeString();
+			}
+
+			return encodedPrefix + encodedArray;
+		}
 
 		public void Add(RESPObject element) => Elements.Add(element);
 

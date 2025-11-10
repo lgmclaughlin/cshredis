@@ -4,15 +4,20 @@ namespace CShredis.RESP
 {
 	public sealed record RESPBulkString : RESPObject
 	{
-		public override RESPType Type => RESPType.BulkString;
-
-		public ReadOnlyMemory<byte> Value { get; private set; }
-
-		public int DeclaredLength { get; }
-
 		private byte[]? _buffer;
 
 		private int _bytesWritten = 0;
+
+		private string? _value;
+
+		public string ValueString =>
+			(_value != null) ? _value : Encoding.UTF8.GetString(Value.Span);
+
+		public ReadOnlyMemory<byte> Value { get; private set; }
+
+		public override RESPType Type => RESPType.BulkString;
+
+		public int DeclaredLength { get; }
 
 		public int BytesMissing => IsComplete ? 0 : _buffer!.Length - _bytesWritten;
 
@@ -38,14 +43,18 @@ namespace CShredis.RESP
 		}
 
 		public RESPBulkString(string value)
-			: this(Encoding.UTF8.GetBytes(value).AsMemory(), value.Length) { }
+			: this(Encoding.UTF8.GetBytes(value).AsMemory(), value.Length)
+		{
+			_value = value;
+		}
 
 		public override ReadOnlyMemory<byte> Encode()
-		{
-			var encodedValue = Type.Qualifier() + DeclaredLength.ToString() + "\r\n"
-				+ Encoding.UTF8.GetString(Value.Span) + "\r\n";
+			=> Encoding.UTF8.GetBytes(EncodeString()).AsMemory();
 
-			return Encoding.UTF8.GetBytes(encodedValue).AsMemory();
+		public override string EncodeString()
+		{
+			return Type.QualifierString() + DeclaredLength.ToString() + "\r\n"
+				+ ValueString + "\r\n";
 		}
 
 		public void Append(ReadOnlyMemory<byte> data)
