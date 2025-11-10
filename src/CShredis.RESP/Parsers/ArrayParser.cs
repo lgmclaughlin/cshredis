@@ -16,10 +16,10 @@ namespace CShredis.RESP
 		{
 			ReadOnlySpan<byte> span = data.Span;
 
-			if (!Utilities.TryParseType(span, RESPType.Array.Qualifier(), RESPType.Array.Name()))
+			if (!ParseUtilities.TryParseType(span, RESPType.Array.Qualifier(), RESPType.Array.Name()))
 				return ParseResult.Incomplete;
 
-			if (!Utilities.TryParseLength(span, out int length, out int lengthBytesConsumed))
+			if (!ParseUtilities.TryParseLength(span, out int length, out int lengthBytesConsumed))
 				return ParseResult.Incomplete;
 
 			if (length == -1)
@@ -40,7 +40,7 @@ namespace CShredis.RESP
 			if (respArray.Partial != null)
 			{
 				var completedPartialParseResult = _dispatcher.ContinueParse(data, respArray.Partial);
-				respArray.Add(completedPartialParseResult.ParsedObject);
+				respArray!.Add(completedPartialParseResult.ParsedObject!);
 				respArray.SetPartial(null);
 				offset += completedPartialParseResult.BytesConsumed;
 			}
@@ -63,7 +63,7 @@ namespace CShredis.RESP
 					return ParseResult.Partial(respArray, offset);
 				}
 
-				respArray.Add(parseResult.ParsedObject);
+				respArray.Add(parseResult.ParsedObject!);
 
 				if (!respArray.IsComplete && offset >= data.Length)
 					return ParseResult.Partial(respArray, offset);

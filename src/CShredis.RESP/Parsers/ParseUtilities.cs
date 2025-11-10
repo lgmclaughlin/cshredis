@@ -1,6 +1,6 @@
 namespace CShredis.RESP
 {
-	public static class Utilities
+	public static class ParseUtilities
 	{
 		public static bool TryParseType(ReadOnlySpan<byte> span, byte expectedTypeByte, string typeName)
 		{

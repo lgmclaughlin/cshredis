@@ -2,19 +2,19 @@ using System;
 using System.Text;
 using Xunit;
 using CShredis.RESP;
-using Utils = CShredis.RESP.Tests.HandlerTestUtilities;
+using Utils = CShredis.RESP.Tests.ParserTestUtilities;
 
 namespace CShredis.RESP.Tests
 {
-	public class ArrayParseHandlerTests : IDisposable
+	public class ArrayParserTests : IDisposable
 	{
 		private ParseDispatcher _dispatcher;
-		private ArrayParseHandler _handler;
+		private ArrayParser _parser;
 
-		public ArrayParseHandlerTests()
+		public ArrayParserTests()
 		{
 			_dispatcher = new();
-			_handler = new(_dispatcher);
+			_parser = new(_dispatcher);
 		}
 
 		[Theory]
@@ -27,7 +27,7 @@ namespace CShredis.RESP.Tests
 			var expectedBytesConsumed = data.Length;
 			var expectedStatus = ParseStatus.Complete;
 			
-			ParseResult parsedResult = _handler.Parse(data);
+			ParseResult parsedResult = _parser.Parse(data);
 
 			var parsedArray = Assert.IsType<RESPArray>(parsedResult.ParsedObject);
 			Assert.Equal(expectedBytesConsumed, parsedResult.BytesConsumed);
@@ -42,7 +42,7 @@ namespace CShredis.RESP.Tests
 			var expectedBytesConsumed = data.Length;
 			var expectedStatus = ParseStatus.Complete;
 
-			ParseResult parsedResult = _handler.Parse(data);
+			ParseResult parsedResult = _parser.Parse(data);
 
 			Assert.IsType<RESPNullArray>(parsedResult.ParsedObject);
 			Assert.Equal(expectedBytesConsumed, parsedResult.BytesConsumed);
@@ -57,7 +57,7 @@ namespace CShredis.RESP.Tests
 			var expectedBytesConsumed = dataPartial.Length;
 			var expectedCount = 1;
 
-			ParseResult parsedPartialResult = _handler.Parse(dataPartial);
+			ParseResult parsedPartialResult = _parser.Parse(dataPartial);
 
 			var parsedPartialArray = Assert.IsType<RESPArray>(parsedPartialResult.ParsedObject);
 			Assert.False(parsedPartialArray.IsComplete);
@@ -70,7 +70,7 @@ namespace CShredis.RESP.Tests
 			expectedBytesConsumed = dataFinal.Length;
 			expectedCount = 3;
 
-			ParseResult parsedResult = _handler.ContinueParse(dataFinal, parsedPartialArray);
+			ParseResult parsedResult = _parser.ContinueParse(dataFinal, parsedPartialArray);
 
 			var parsedArray = Assert.IsType<RESPArray>(parsedResult.ParsedObject);
 			Assert.True(parsedArray.IsComplete);
@@ -87,7 +87,7 @@ namespace CShredis.RESP.Tests
 			var expectedBytesConsumed = dataPartial.Length;
 			var expectedCount = 0;
 
-			ParseResult parsedPartialResult1 = _handler.Parse(dataPartial);
+			ParseResult parsedPartialResult1 = _parser.Parse(dataPartial);
 
 			var parsedPartialArray1 = Assert.IsType<RESPArray>(parsedPartialResult1.ParsedObject);
 			Assert.False(parsedPartialArray1.IsComplete);
@@ -100,7 +100,7 @@ namespace CShredis.RESP.Tests
 			expectedBytesConsumed = dataPartial.Length;
 			expectedCount = 2;
 
-			ParseResult parsedPartialResult2 = _handler.ContinueParse(dataPartial, parsedPartialArray1);
+			ParseResult parsedPartialResult2 = _parser.ContinueParse(dataPartial, parsedPartialArray1);
 
 			var parsedPartialArray2 = Assert.IsType<RESPArray>(parsedPartialResult2.ParsedObject);
 			Assert.False(parsedPartialArray2.IsComplete);
@@ -113,7 +113,7 @@ namespace CShredis.RESP.Tests
 			expectedBytesConsumed = dataFinal.Length;
 			expectedCount = 3;
 
-			ParseResult parsedResult = _handler.ContinueParse(dataFinal, parsedPartialArray2);
+			ParseResult parsedResult = _parser.ContinueParse(dataFinal, parsedPartialArray2);
 
 			var parsedArray = Assert.IsType<RESPArray>(parsedResult.ParsedObject);
 			Assert.True(parsedArray.IsComplete);
@@ -134,7 +134,7 @@ namespace CShredis.RESP.Tests
 			ReadOnlyMemory<byte> data = Utils.StringToMemoryBytes(input);
 			var expectedStatus = ParseStatus.Partial;
 			
-			ParseResult parsedResult = _handler.Parse(data);
+			ParseResult parsedResult = _parser.Parse(data);
 
 			var parsedArray = Assert.IsType<RESPArray>(parsedResult.ParsedObject);
 			Assert.False(parsedArray.IsComplete);
@@ -145,7 +145,7 @@ namespace CShredis.RESP.Tests
 
 		public void Dispose()
 		{
-			_handler = null;
+			_parser = null;
 		}
 	}
 }

@@ -8,10 +8,10 @@ namespace CShredis.RESP
 		{
 			ReadOnlySpan<byte> span = data.Span;
 
-			if (!Utilities.TryParseType(span, RESPType.BulkString.Qualifier(), RESPType.BulkString.Name()))
+			if (!ParseUtilities.TryParseType(span, RESPType.BulkString.Qualifier(), RESPType.BulkString.Name()))
 				return ParseResult.Incomplete;
 
-			if (!Utilities.TryParseLength(span, out int declaredLength, out int lengthBytesConsumed))
+			if (!ParseUtilities.TryParseLength(span, out int declaredLength, out int lengthBytesConsumed))
 				return ParseResult.Incomplete;
 
 			if (declaredLength == -1)

@@ -14,7 +14,7 @@ namespace CShredis.RESP
 
 		private int _bytesWritten = 0;
 
-		public int BytesMissing => IsComplete ? 0 : _buffer.Length - _bytesWritten;
+		public int BytesMissing => IsComplete ? 0 : _buffer!.Length - _bytesWritten;
 
 		public bool IsComplete => _buffer == null;
 
