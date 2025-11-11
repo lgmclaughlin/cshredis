@@ -11,6 +11,8 @@
 
   <ItemGroup>
     <PackageReference Include="Mono.Posix.NETStandard" Version="1.0.0" />
+    <ProjectReference Include="..\..\src\CShredis.RESP\CShredis.RESP.csproj" />
+    <ProjectReference Include="..\..\src\CShredis.Commands\CShredis.Commands.csproj" />
   </ItemGroup>
 
 </Project>

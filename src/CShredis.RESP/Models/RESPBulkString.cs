@@ -52,7 +52,7 @@ namespace CShredis.RESP
 			=> Encoding.UTF8.GetBytes(EncodeString()).AsMemory();
 
 		public override string EncodeString()
-			=> Type.QualifierString() + DeclaredLength.ToString() + "\r\n" + ValueString + "\r\n";
+			=> $"{Type.QualifierString()}{DeclaredLength.ToString()}\r\n{ValueString}\r\n";
 
 		public override string Print() => ValueString;
 

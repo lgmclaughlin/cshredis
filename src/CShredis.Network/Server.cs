@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Runtime.InteropServices;
 using Mono.Unix.Native;
+using CShredis.RESP;
+using CShredis.Commands;
 
 namespace CShredis.Network
 {
@@ -39,6 +41,10 @@ namespace CShredis.Network
 		private Dictionary<int, Client> _clients = new Dictionary<int, Client>();
 	
 		private bool _running = false;
+
+		private static readonly ParseDispatcher _parseDispatcher = new();
+		
+		private static readonly CommandDispatcher _commandDispatcher = new();
 
 		/// <summary>
 		/// Initializes a Server
@@ -328,24 +334,31 @@ namespace CShredis.Network
 							{
 								try
 								{
-									string data = client.Read();
-									if (!string.IsNullOrEmpty(data))
+									ReadOnlyMemory<byte>? dataNullable = client.Read();
+									if (dataNullable == null)
 									{
-										string escapedData = data.Replace("\r", "\\r").Replace("\n", "\\n");
+										Console.WriteLine($"Client with fd {ev.fd} closed connection. Removing client.");
+										RemoveClient(client);
+										continue;
+									}
+
+									var data = (ReadOnlyMemory<byte>)dataNullable;
+									if (data.Length > 0)
+									{
+										string escapedData = Encoding.UTF8.GetString(data.Span)
+											.Replace("\r", "\\r").Replace("\n", "\\n");
 										Console.WriteLine($@"Received from client fd {ev.fd}: {escapedData}");
 
-										client.EnqueueResponseToWriteQueue("+PONG\r\n");
+										var dataRespObject = _parseDispatcher.Parse(data).ParsedObject;
+										var commandResult = _commandDispatcher.Execute(dataRespObject);
+										var encodedResponse = commandResult.Result.Encode();
+
+										client.EnqueueResponseToWriteQueue(encodedResponse);
 
 										// Client previously had 0 responses queued and was
 										// not listening for writes, so listen now
 										if (client.GetWriteQueueCount() == 1)
 											ModifyFd(ev.fd, CLIENT_EVENTS | EpollEvents.EPOLLOUT);
-									}
-									else if (data == null)
-									{
-										Console.WriteLine($"Client with fd {ev.fd} closed connection. Removing client.");
-										RemoveClient(client);
-										continue;
 									}
 								}
 								catch (Exception ex)

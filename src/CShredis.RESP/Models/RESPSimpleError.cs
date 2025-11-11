@@ -6,6 +6,8 @@ namespace CShredis.RESP
 	{
 		private string? _value;
 
+		private string _prefix = "ERR";
+
 		public string ValueString =>
 			(_value != null) ? _value : Encoding.UTF8.GetString(Value.Span);
 
@@ -14,15 +16,16 @@ namespace CShredis.RESP
 		public RESPSimpleError(string value)
 			: this(Encoding.UTF8.GetBytes(value).AsMemory())
 		{
-			_value = value;
+			_value = value; 
+			Console.WriteLine($"***** Simple Error Value: {_value}");
 		}
 
 		public override ReadOnlyMemory<byte> Encode() =>
 			Encoding.UTF8.GetBytes(EncodeString()).AsMemory();
 
 		public override string EncodeString() =>
-			Type.QualifierString() + "ERR " + ValueString + "\r\n";
+			$"{Type.QualifierString()}{_prefix} {ValueString}\r\n";
 
-		public override string Print() => ValueString;
+		public override string Print() => $"(error) {_prefix} {ValueString}";
 	}
 }

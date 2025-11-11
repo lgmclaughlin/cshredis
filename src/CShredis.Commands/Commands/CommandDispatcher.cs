@@ -19,15 +19,20 @@ namespace CShredis.Commands
 			};
 		}
 
-		public CommandResult Execute(RESPArray command)
+		public CommandResult Execute(RESPObject command)
 		{
-			if (command.Count == 0)
+			if (command.Type != RESPType.Array)
+				throw new ArgumentException("Invalid command type. Array expected.", nameof(command));
+
+			var commandArray = (RESPArray)command;
+
+			if (commandArray.Count == 0)
 				return new CommandResult(new RESPSimpleError("no command to execute"));
 
-			if (command.Elements.Any(e => e.Type != RESPType.BulkString))
+			if (commandArray.Elements.Any(e => e.Type != RESPType.BulkString))
 				throw new ArgumentException("Invalid command types. Bulk strings expected.", nameof(command));
 
-			var commandBulkStrings = command.Elements.Cast<RESPBulkString>().ToList();
+			var commandBulkStrings = commandArray.Elements.Cast<RESPBulkString>().ToList();
 			var commandStrings = commandBulkStrings.Select(cbs => Encoding.UTF8.GetString(cbs.Value.Span)).ToList();
 			var commandName = commandStrings[0];
 

@@ -25,7 +25,7 @@ namespace CShredis.RESP
 
 		public override string EncodeString()
 		{
-			var encodedPrefix = Type.QualifierString() + Count.ToString() + "\r\n";
+			var encodedPrefix = $"{Type.QualifierString()}{Count.ToString()}\r\n";
 			
 			var encodedArray = new StringBuilder();
 			foreach (var el in Elements)

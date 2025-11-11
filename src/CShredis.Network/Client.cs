@@ -32,7 +32,7 @@ namespace CShredis.Network
 		/// <summary>
 		/// Reads from client file.
 		/// </summary>
-		public string Read()
+		public ReadOnlyMemory<byte>? Read()
 		{
 			var readBytes = new byte[MAX_READ_SIZE];
 			long readCount;
@@ -55,7 +55,7 @@ namespace CShredis.Network
 				if (errno == Errno.EAGAIN || errno == Errno.EWOULDBLOCK)
 				{
 					Console.WriteLine("Read from client would block - returning.");
-					return string.Empty;
+					return ReadOnlyMemory<byte>.Empty;
 				}
 
 				throw new IOException($"Reading from client {_fd} failed: {errno}");
@@ -63,13 +63,13 @@ namespace CShredis.Network
 
 			Console.WriteLine("Read from client succesful.");
 
-			return Encoding.UTF8.GetString(readBytes, 0, (int)readCount);
+			return readBytes[..(int)readCount].AsMemory();
 		}
 
 		/// <summary>
 		/// Adds a response to the end of the response queue.
 		/// </summary>
-		public void EnqueueResponseToWriteQueue(string response) => _writeQueue.AddLast(Encoding.UTF8.GetBytes(response));
+		public void EnqueueResponseToWriteQueue(ReadOnlyMemory<byte> response) => _writeQueue.AddLast(response.ToArray());
 
 		/// <summary>
 		/// Writes a response to the client file. 

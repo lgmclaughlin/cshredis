@@ -21,7 +21,7 @@ namespace CShredis.RESP
 			=> Encoding.UTF8.GetBytes(EncodeString()).AsMemory();
 
 		public override string EncodeString()
-			=> Type.QualifierString() + ValueString + "\r\n";
+			=> $"{Type.QualifierString()}{ValueString}\r\n";
 
 		public override string Print() => ValueString;
 	}
