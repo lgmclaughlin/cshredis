@@ -16,5 +16,7 @@ namespace CShredis.RESP
 
 		public override string EncodeString() =>
 			Type.QualifierString() + ValueString + "\r\n";
+
+		public override string Print() => ValueString;
 	}
 }

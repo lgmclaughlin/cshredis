@@ -52,10 +52,9 @@ namespace CShredis.RESP
 			=> Encoding.UTF8.GetBytes(EncodeString()).AsMemory();
 
 		public override string EncodeString()
-		{
-			return Type.QualifierString() + DeclaredLength.ToString() + "\r\n"
-				+ ValueString + "\r\n";
-		}
+			=> Type.QualifierString() + DeclaredLength.ToString() + "\r\n" + ValueString + "\r\n";
+
+		public override string Print() => ValueString;
 
 		public void Append(ReadOnlyMemory<byte> data)
 		{
@@ -78,11 +77,7 @@ namespace CShredis.RESP
 
 		private void Freeze(ReadOnlyMemory<byte> data)
 		{
-			ReadOnlySpan<byte> span = data.Span;
-
-			if (span[^2] != (byte)'\r' || span[^1] != (byte)'\n')
-				throw new InvalidOperationException(
-						$"Invalid CRLF after body, expect '\\r\\n', saw '{(char)span[^2]}{(char)span[^1]}'.");
+			ParseUtilities.VerifyCRLF(data.Span);
 
 			Value = data.Slice(0, DeclaredLength);
 		}

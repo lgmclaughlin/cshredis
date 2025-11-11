@@ -26,14 +26,23 @@ namespace CShredis.RESP
 		public override string EncodeString()
 		{
 			var encodedPrefix = Type.QualifierString() + Count.ToString() + "\r\n";
-			var encodedArray = "";	
 			
+			var encodedArray = new StringBuilder();
 			foreach (var el in Elements)
-			{
-				encodedArray += el.EncodeString();
-			}
+				encodedArray.Append(el.EncodeString());
 
-			return encodedPrefix + encodedArray;
+			return encodedPrefix + encodedArray.ToString();
+		}
+
+		public override string Print()
+		{
+			if (Count == 0) return "(empty array)";
+			
+			var sb = new StringBuilder();
+			for (int i = 0; i < Elements.Count; i++)
+				sb.AppendLine($"{i + 1} {Elements[i].Print()}");
+
+			return sb.ToString();
 		}
 
 		public void Add(RESPObject element) => Elements.Add(element);

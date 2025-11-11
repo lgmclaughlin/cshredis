@@ -21,5 +21,7 @@ namespace CShredis.RESP
 			=> Encoding.UTF8.GetBytes(EncodeString()).AsMemory();
 
 		public override string EncodeString() => "";
+
+		public override string Print() => ValueString;
 	}
 }

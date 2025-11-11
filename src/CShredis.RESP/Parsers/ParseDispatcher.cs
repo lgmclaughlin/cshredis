@@ -14,7 +14,13 @@ namespace CShredis.RESP
 			_parsers = new Dictionary<byte, IParser> ()
 			{
 				{ RESPType.Array.Qualifier(), new ArrayParser(this) },
+				//{ RESPType.BulkError.Qualifier(), new BulkErrorParser() },
+				{ RESPType.SimpleString.Qualifier(), new SimpleStringParser() },
 				{ RESPType.BulkString.Qualifier(), new BulkStringParser() }
+				//{ RESPType.Integer.Qualifier(), new IntegerParser() },
+				//{ RESPType.NullArray.Qualifier(), new NullArrayParser() },
+				//{ RESPType.NullBulkString.Qualifier(), new NullBulkStringParser() },
+				//{ RESPType.SimpleError.Qualifier(), new SimpleErrorParser() },
 			};
 		}
 

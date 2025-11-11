@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace CShredis.RESP
 {
 	public static class ParseUtilities
@@ -69,5 +71,15 @@ namespace CShredis.RESP
 
             return false;
         }
+
+		public static void VerifyCRLF(ReadOnlySpan<byte> span)
+		{
+			if (span.Length < 2)
+				throw new InvalidOperationException("Invalid CRLF after body, expected '\\r\\n'.");
+
+			if (span[^2] != (byte)'\r' || span[^1] != (byte)'\n')
+				throw new InvalidOperationException(
+						$"Invalid CRLF after body, expected '\\r\\n', saw '{(char)span[^2]}{(char)span[^1]}'.");
+		}
 	}
 }

@@ -9,6 +9,8 @@ namespace CShredis.RESP
 		public abstract ReadOnlyMemory<byte> Encode();
 
 		public abstract string EncodeString();
+
+		public virtual string Print() => EncodeString();
 	}
 
 	public abstract record RESPError : RESPObject;
