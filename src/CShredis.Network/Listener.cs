@@ -10,43 +10,33 @@ namespace CShredis.Network
 {
 	public class Listener : IDisposable
 	{
+		private static readonly NetworkLogger _log = NetworkLogger.For(nameof(Listener));
 		private int _fd = -1;
 
 		public int Fd { get { return _fd; } }
 
-		/// <summary>
-		/// Initializes a Listener.
-		/// </summary>
-		public Listener()
-		{
-		}
+		public Listener() { }
 		
-		/// <summary>
-		/// Prepares the socket with passed family.
-		/// </summary>
 		private void SetupSocket(UnixAddressFamily family)
 		{
 			if (_fd > -1)
 				throw new InvalidOperationException("The socket is already initialized.");
 
-			Console.WriteLine("Setting up listener socket.");
+			_log.Info("Setting up listener socket.");
 
 			_fd = Syscall.socket(family, UnixSocketType.SOCK_STREAM, 0);
 
 			if (_fd < 0)
 				throw new IOException($"Failed to open socket: {Stdlib.GetLastError()}");
 
-			Console.WriteLine($"Setting socket options for socket fd {_fd}.");
+			_log.Trace($"Setting socket options for socket fd {_fd}.");
 
 			Syscall.setsockopt(_fd, UnixSocketProtocol.SOL_SOCKET, UnixSocketOptionName.SO_REUSEADDR, 1);
 		}
 
-		/// <summary>
-		/// Binds the socket to an endpoint and begins listening.
-		/// </summary>
 		public void Bind(EndPoint endPoint, int backlog)
 		{
-			Console.WriteLine($"Binding listener to endpoint with backlog {backlog}.");
+			_log.Trace($"Binding listener to endpoint with backlog {backlog}.");
 			
 			try
 			{
@@ -98,12 +88,9 @@ namespace CShredis.Network
 			}
 		}
 
-		/// <summary>
-		/// Accepts an incoming connection and returns the file descriptor.
-		/// </summary>
 		public int Accept()
 		{
-			Console.WriteLine("Listener accepting incoming connection.");
+			_log.Info("Listener accepting incoming connection.");
 
 			var addr = new SockaddrIn();
 			int fd = Syscall.accept(_fd, addr);
@@ -111,14 +98,11 @@ namespace CShredis.Network
 			if (fd < 0)
 				throw new IOException($"Failed to accept: {Stdlib.GetLastError()}");
 
-			Console.WriteLine($"Connection successfully accepted with fd {fd}.");
+			_log.Trace($"Connection successfully accepted with fd {fd}.");
 
 			return fd;
 		}
 		
-		/// <summary>
-		/// Closes the socket.
-		/// </summary>
 		public void Dispose()
 		{
 			if (_fd >= 0)

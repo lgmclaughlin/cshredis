@@ -8,36 +8,25 @@ namespace CShredis.Network
 {
 	public class Client : IDisposable
 	{
+		private static readonly NetworkLogger _log = NetworkLogger.For(nameof(Client));
 		private const int MAX_READ_SIZE = 4096;
-
 		private int _fd = -1;
-
-		public int Fd { get { return _fd; } }
-
 		private LinkedList<byte[]> _writeQueue = new LinkedList<byte[]>();
 
-		/// <summary>
-		/// Gets the current count of the write queue. 
-		/// </summary>
+		public int Fd { get { return _fd; } }
 		public int GetWriteQueueCount() => _writeQueue.Count;
 
-		/// <summary>
-		/// Initializes a client.
-		/// </summary>
 		public Client (int fd)
 		{
 			_fd = fd;
 		}
 
-		/// <summary>
-		/// Reads from client file.
-		/// </summary>
 		public ReadOnlyMemory<byte>? Read()
 		{
 			var readBytes = new byte[MAX_READ_SIZE];
 			long readCount;
 
-			Console.WriteLine("Reading from client.");
+			_log.Info("Reading from client.");
 
 			unsafe
 			{
@@ -54,29 +43,23 @@ namespace CShredis.Network
 				var errno = Stdlib.GetLastError();
 				if (errno == Errno.EAGAIN || errno == Errno.EWOULDBLOCK)
 				{
-					Console.WriteLine("Read from client would block - returning.");
+					_log.Info("Read from client would block - returning.");
 					return ReadOnlyMemory<byte>.Empty;
 				}
 
 				throw new IOException($"Reading from client {_fd} failed: {errno}");
 			}
 
-			Console.WriteLine("Read from client succesful.");
+			_log.Info("Read from client succesful.");
 
 			return readBytes[..(int)readCount].AsMemory();
 		}
 
-		/// <summary>
-		/// Adds a response to the end of the response queue.
-		/// </summary>
 		public void EnqueueResponseToWriteQueue(ReadOnlyMemory<byte> response) => _writeQueue.AddLast(response.ToArray());
 
-		/// <summary>
-		/// Writes a response to the client file. 
-		/// </summary>
 		public void Write()
 		{
-			Console.WriteLine("Writing messages back to client.");
+			_log.Info("Writing messages back to client.");
 			
 			while (_writeQueue.Count > 0)
 			{
@@ -94,7 +77,7 @@ namespace CShredis.Network
 					var errno = Stdlib.GetLastError();
 					if (errno == Errno.EAGAIN || errno == Errno.EWOULDBLOCK)
 					{
-						Console.WriteLine("Writing to client would block - returning.");
+						_log.Info("Writing to client would block - returning.");
 						return;
 					}
 
@@ -108,13 +91,11 @@ namespace CShredis.Network
 
 				_writeQueue.RemoveFirst();
 
-				Console.WriteLine($"Write to client successful. Messages remaining in queue: {_writeQueue.Count}"); 
+				_log.Info("Write to client successful.");
+				_log.Debug($"Messages remaining in queue: {_writeQueue.Count}"); 
 			}
 		}
 
-		/// <summary>
-		/// Closes the client connection.
-		/// </summary>
 		public void Dispose()
 		{
 			if (_fd >= 0)
