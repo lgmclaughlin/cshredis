@@ -9,6 +9,8 @@ namespace CShredis.RESP
 		public override ReadOnlyMemory<byte> Encode()
 			=> Encoding.UTF8.GetBytes(EncodeString()).AsMemory();
 
-		public override string EncodeString() => "";
+		public override string EncodeString() => "$-1\r\n";
+
+		public override string Print() => "(nil)";
 	}
 }

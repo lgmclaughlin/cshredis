@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Net.Sockets;
 using CShredis.RESP;
 
@@ -33,7 +34,10 @@ namespace CShredis.Network
 						break;
 					}
 					
-					var tokens = input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+					string[] tokens = Regex.Matches(input, @"[\""].+?[\""]|[^ ]+")
+						.Select(m => m.Value)
+						.ToArray(); 
+
 					if (tokens.Length == 0)
 					{
 						Console.WriteLine();
