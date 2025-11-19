@@ -1,17 +1,47 @@
+using System;
 using System.Text;
 
 namespace CShredis.RESP
 {
-	public abstract record RESPObject
+	public record RESPObject
 	{
-		public abstract RESPType Type { get; }
+		public RESPType Type { get; set; }
+		public ReadOnlyMemory<byte> Value { get; set; }
 
-		public abstract ReadOnlyMemory<byte> Encode();
+		public string ValueString => Encoding.UTF8.GetString(Value.Span);
+		public int Length => Value.Length;
+		public bool IsError =>
+			Type == RESPType.SimpleError ||
+			Type == RESPType.BulkError;
 
-		public abstract string EncodeString();
+		public RESPObject(RESPType type, string value)
+			: this(type, Encoding.UTF8.GetBytes(value).AsMemory()) { }
 
-		public virtual string Print() => EncodeString();
+		public RESPObject(RESPType type, ReadOnlyMemory<byte>? value = null)
+		{
+			Type = type;
+			Value = value ?? ReadOnlyMemory<byte>.Empty;
+		}
+
+		public static RESPObject BulkError(ReadOnlyMemory<byte>? value = null) =>
+			new(RESPType.BulkError, value);
+
+		public static RESPObject BulkString(ReadOnlyMemory<byte>? value = null) =>
+			new(RESPType.BulkString, value);
+
+		public static RESPObject Integer(ReadOnlyMemory<byte>? value) =>
+			new(RESPType.Integer, value);
+
+		public static RESPObject NullArray() =>
+			new(RESPType.NullArray);
+
+		public static RESPObject NullBulkString() =>
+			new(RESPType.NullBulkString);
+
+		public static RESPObject SimpleError(ReadOnlyMemory<byte>? value) =>
+			new(RESPType.SimpleError, value);
+
+		public static RESPObject SimpleString(ReadOnlyMemory<byte>? value) =>
+			new(RESPType.SimpleString, value);
 	}
-
-	public abstract record RESPError : RESPObject;
 }

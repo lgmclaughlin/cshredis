@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Net.Sockets;
 using CShredis.RESP;
+using Encoder = CShredis.RESP.Encoder;
 
 namespace CShredis.Network
 {
@@ -14,14 +15,9 @@ namespace CShredis.Network
 		{
 			try
 			{
-				Console.WriteLine("Connecting to server...");
-				
 				var client = new TcpClient();
 				await client.ConnectAsync("127.0.0.1", 6379);
 				using var stream = client.GetStream();
-
-				Console.WriteLine("Connected on Port 6379.");
-				Console.WriteLine("\r******** CShredis CLI ********\r\n");
 
 				while (true)
 				{
@@ -45,11 +41,11 @@ namespace CShredis.Network
 					}
 
 					var tokenElements = new List<RESPObject>(tokens.Length);
-					foreach (var t in tokens)
-						tokenElements.Add(new RESPBulkString(t));
+					foreach (var token in tokens)
+						tokenElements.Add(new RESPObject(RESPType.BulkString, token));
 
 					var tokenRespArray = new RESPArray(tokenElements);
-					var encodedTokenRespArray = tokenRespArray.Encode();
+					var encodedTokenRespArray = Encoder.Encode(tokenRespArray);
 
 					await stream.WriteAsync(encodedTokenRespArray);
 					await stream.FlushAsync();
@@ -58,7 +54,7 @@ namespace CShredis.Network
 					int bytesRead = await stream.ReadAsync(buffer);
 					var responseRespObject = _parseDispatcher.Parse(buffer[..bytesRead]).ParsedObject;
 
-					Console.WriteLine(responseRespObject!.Print());
+					Console.WriteLine(Printer.Print(responseRespObject!));
 				}
 			}
 			catch (Exception ex)

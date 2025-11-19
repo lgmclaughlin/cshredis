@@ -10,6 +10,7 @@ using System.Runtime.InteropServices;
 using Mono.Unix.Native;
 using CShredis.RESP;
 using CShredis.Commands;
+using Encoder = CShredis.RESP.Encoder;
 
 namespace CShredis.Network
 {
@@ -298,15 +299,19 @@ namespace CShredis.Network
 											.Replace("\r", "\\r").Replace("\n", "\\n");
 										_log.Debug($@"Received from client fd {ev.fd}: {escapedData}");
 
-										var dataRespObject = _parseDispatcher.Parse(data).ParsedObject;
-										var commandResult = _commandDispatcher.Execute(dataRespObject);
-										var encodedResponse = commandResult.Result.Encode();
+										var dataRespObjects = _parseDispatcher.ParseStream(data);
+										
+										foreach (var obj in dataRespObjects)
+										{
+											var commandResult = _commandDispatcher.Execute(obj);
+											var encodedResponse = Encoder.Encode(commandResult.Result);
 
-										client.EnqueueResponseToWriteQueue(encodedResponse);
+											client.EnqueueResponseToWriteQueue(encodedResponse);
+										}
 
 										// Client previously had 0 responses queued and was
 										// not listening for writes, so listen now
-										if (client.GetWriteQueueCount() == 1)
+										if (client.GetWriteQueueCount() > 0)
 											ModifyFd(ev.fd, CLIENT_EVENTS | EpollEvents.EPOLLOUT);
 									}
 								}

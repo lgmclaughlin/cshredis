@@ -16,60 +16,64 @@ namespace CShredis.RESP
 		{
 			ReadOnlySpan<byte> span = data.Span;
 
-			if (!ParseUtilities.TryParseType(span, RESPType.Array.Qualifier(), RESPType.Array.Name()))
+			if (!RESPUtilities.TryParseType(span, RESPType.Array.Qualifier(), RESPType.Array.Name()))
 				return ParseResult.Incomplete;
 
-			if (!ParseUtilities.TryParseLength(span, out int length, out int lengthBytesConsumed))
+			if (!RESPUtilities.TryParseLength(span, out int length, out int lengthBytesConsumed))
 				return ParseResult.Incomplete;
 
 			if (length == -1)
-				return ParseResult.Complete(new RESPNullArray(), lengthBytesConsumed);
+			{
+				var respObject = new RESPObject(RESPType.NullArray);
+				return new ParseResult(RESPObject.NullArray(), lengthBytesConsumed);
+			}
 
 			var offset = lengthBytesConsumed;
+			var parseResultArray = new ParseResultArray(length);
 
-			var respArray = new RESPArray(length);
-
-			return ParseElements(data, respArray, offset);
+			return ParseElements(data, parseResultArray, offset);
 		}
 
-		public ParseResult ContinueParse(ReadOnlyMemory<byte> data, RESPObject partial)
-			=> ParseElements(data, (RESPArray)partial);
+		public ParseResult ContinueParse(ReadOnlyMemory<byte> data, ParseResult partial)
+			=> ParseElements(data, partial);
 
-		private ParseResult ParseElements(ReadOnlyMemory<byte> data, RESPArray respArray, int offset = 0)
+		private ParseResultArray ParseElements(ReadOnlyMemory<byte> data, ParseResult parseResult, int offset = 0)
 		{
-			if (respArray.Partial != null)
-			{
-				var completedPartialParseResult = _dispatcher.ContinueParse(data, respArray.Partial);
-				respArray!.Add(completedPartialParseResult.ParsedObject!);
-				respArray.SetPartial(null);
-				offset += completedPartialParseResult.BytesConsumed;
-			}
-
-			int elementsToParse = respArray.DeclaredLength - respArray.Count;
-
+			var parseResultArray = (ParseResultArray)parseResult;
+			int elementsToParse = parseResultArray.DeclaredLength - parseResultArray.Count;
+			
 			for (int i = 0; i < elementsToParse; i++)
 			{
+				if (offset >= data.Length)
+					break;
+
 				var slice = data.Slice(offset);
-				var parseResult = _dispatcher.Parse(slice);
-
-				if (parseResult.Status == ParseStatus.Incomplete)
-					return ParseResult.Partial(respArray, offset);
-
-				offset += parseResult.BytesConsumed;
-
-				if (parseResult.Status == ParseStatus.Partial)
+				ParseResult elParseResult;
+				if (parseResultArray.Partial != null)
 				{
-					respArray.SetPartial(parseResult.ParsedObject);
-					return ParseResult.Partial(respArray, offset);
+					elParseResult = _dispatcher.ContinueParse(slice, parseResultArray.Partial);
+					parseResultArray.SetPartial(null);
+				}
+				else
+				{
+					elParseResult = _dispatcher.Parse(slice);
 				}
 
-				respArray.Add(parseResult.ParsedObject!);
+				if (elParseResult.Status != ParseStatus.Incomplete)
+					offset += elParseResult.BytesConsumed;
 
-				if (!respArray.IsComplete && offset >= data.Length)
-					return ParseResult.Partial(respArray, offset);
+				if (elParseResult.Status != ParseStatus.Complete)
+				{
+					parseResultArray.SetPartial(elParseResult);
+					break;
+				}
+
+				parseResultArray.Add(elParseResult.ParsedObject!);
 			}
 
-			return ParseResult.Complete(respArray, offset);
+			parseResultArray.BytesConsumed = offset;
+
+			return parseResultArray;
 		}
 	}
 }

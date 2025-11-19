@@ -19,17 +19,18 @@ namespace CShredis.RESP
 		private static readonly string[] _names = Enum.GetNames(typeof(RESPType));
 
 		public static string Name(this RESPType type) => _names[(int)type];
-
 		public static string QualifierString(this RESPType type) => ((char)type.Qualifier()).ToString();
 
 		public static byte Qualifier(this RESPType type) => type switch
 		{
-			RESPType.SimpleString => (byte)'+',
-			RESPType.BulkString   => (byte)'$',
-			RESPType.Integer      => (byte)':',
-			RESPType.Array        => (byte)'*',
-			RESPType.SimpleError  => (byte)'-',
-			RESPType.BulkError    => (byte)'!',
+			RESPType.SimpleString   => (byte)'+',
+			RESPType.BulkString     => (byte)'$',
+			RESPType.Integer        => (byte)':',
+			RESPType.Array          => (byte)'*',
+			RESPType.SimpleError    => (byte)'-',
+			RESPType.BulkError      => (byte)'!',
+			RESPType.NullArray      => (byte)'*',
+			RESPType.NullBulkString => (byte)'$',
 			_ => throw new InvalidOperationException("Unknown RESPType: {type}")
 		};
 

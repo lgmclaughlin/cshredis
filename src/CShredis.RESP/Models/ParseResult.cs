@@ -1,13 +1,21 @@
 namespace CShredis.RESP
 {
-	public record struct ParseResult(RESPObject? ParsedObject, int BytesConsumed, ParseStatus Status)
+	public record ParseResult
 	{
-		public static ParseResult Incomplete = new(null, 0, ParseStatus.Incomplete);
+		public RESPObject? ParsedObject { get; set; }
+		public int BytesConsumed { get; set; }
+		public ParseStatus Status { get; set; }
 
-		public static ParseResult Partial(RESPObject? parsedObject, int bytesConsumed)
-			=> new(parsedObject, bytesConsumed, ParseStatus.Partial);
+		public static readonly ParseResult Incomplete = new(null, 0, ParseStatus.Incomplete);
 
-		public static ParseResult Complete(RESPObject? parsedObject, int bytesConsumed)
-			=> new(parsedObject, bytesConsumed, ParseStatus.Complete);
+		public ParseResult(
+				RESPObject? parsedObject,
+				int bytesConsumed,
+				ParseStatus status = ParseStatus.Complete)
+		{
+			ParsedObject = parsedObject;
+			BytesConsumed = bytesConsumed;
+			Status = status;
+		}
 	}
 }

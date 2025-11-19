@@ -6,40 +6,57 @@ namespace CShredis.RESP
 	public class ParseDispatcher
 	{
 		private readonly Dictionary<byte, IParser> _parsers; 
-
-		private RESPObject? _partial;
+		private ParseResult? _partial;
 
 		public ParseDispatcher()
 		{
-			_parsers = new Dictionary<byte, IParser> ()
+			_parsers = new Dictionary<byte, IParser>()
 			{
 				{ RESPType.Array.Qualifier(), new ArrayParser(this) },
 				//{ RESPType.BulkError.Qualifier(), new BulkErrorParser() },
-				{ RESPType.SimpleString.Qualifier(), new SimpleStringParser() },
 				{ RESPType.BulkString.Qualifier(), new BulkStringParser() },
 				//{ RESPType.Integer.Qualifier(), new IntegerParser() },
 				//{ RESPType.NullArray.Qualifier(), new NullArrayParser() },
 				//{ RESPType.NullBulkString.Qualifier(), new NullBulkStringParser() },
-				{ RESPType.SimpleError.Qualifier(), new SimpleErrorParser() }
+				{ RESPType.SimpleError.Qualifier(), new SimpleErrorParser() },
+				{ RESPType.SimpleString.Qualifier(), new SimpleStringParser() }
 			};
 		}
 
-		public ParseResult Parse(ReadOnlyMemory<byte> data)
+		public List<RESPObject> ParseStream(ReadOnlyMemory<byte> data)
 		{
 			if (data.IsEmpty)
-				throw new ArgumentException("Data cannot be null or empty.", nameof(data));
+				throw new ArgumentException("Data cannot be empty.", nameof(data));
 
-			if (_partial != null)
+			var offset = 0;
+			var parsedObjects = new List<RESPObject>();
+
+			while (offset < data.Length)
 			{
-				return ContinueParse(data, _partial);
+				var slice = data.Slice(offset);
+				var parseResult = (_partial is null)
+					? Parse(slice)
+					: ContinueParse(slice, _partial);
+
+				if (parseResult.Status == ParseStatus.Incomplete)
+					break;
+
+				offset += parseResult.BytesConsumed;
+
+				if (parseResult.Status == ParseStatus.Partial)
+				{
+					_partial = parseResult;
+					break;
+				}
+
+				parsedObjects.Add(parseResult.ParsedObject!);
+				_partial = null;
 			}
-			else
-			{
-				return ParseNew(data);
-			}
+
+			return parsedObjects;
 		}
 
-		private ParseResult ParseNew(ReadOnlyMemory<byte> data)
+		public ParseResult Parse(ReadOnlyMemory<byte> data)
 		{
 			byte type = data.Span[0];
 
@@ -49,21 +66,20 @@ namespace CShredis.RESP
 			var parseResult = parser.Parse(data);
 
 			if (parseResult.Status == ParseStatus.Partial)
-				_partial = parseResult.ParsedObject;
+				_partial = parseResult;
 			
 			return parseResult;
 		}
 
-		public ParseResult ContinueParse(ReadOnlyMemory<byte> data, RESPObject partial)
+		public ParseResult ContinueParse(ReadOnlyMemory<byte> data, ParseResult partial)
 		{
-			_partial = null;
-
-			var parser = (IPartialParser)_parsers[partial.Type.Qualifier()];
+			var parser = (IPartialParser)_parsers[partial.ParsedObject!.Type.Qualifier()];
 
 			var parseResult = parser.ContinueParse(data, partial);
 
-			if (parseResult.Status == ParseStatus.Partial)
-				_partial = parseResult.ParsedObject;
+			_partial = (parseResult.Status == ParseStatus.Partial)
+				? parseResult
+				: null;
 
 			return parseResult;
 		}

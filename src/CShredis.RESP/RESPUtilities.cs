@@ -2,7 +2,7 @@ using System.Text;
 
 namespace CShredis.RESP
 {
-	public static class ParseUtilities
+	public static class RESPUtilities
 	{
 		public static bool TryParseType(ReadOnlySpan<byte> span, byte expectedTypeByte, string typeName)
 		{
@@ -22,12 +22,10 @@ namespace CShredis.RESP
             bytesConsumed = 0;
 			
 			int index = 1;
-
             if (index >= span.Length)
                 return false;
 
             int sign = 1;
-
             if (span[index] == (byte)'-')
             {
                 sign = -1;
@@ -43,7 +41,6 @@ namespace CShredis.RESP
             for (; index < span.Length; index++)
             {
                 byte b = span[index];
-
                 if (b == (byte)'\r')
                 {
 					if (!sawDigit)
@@ -71,6 +68,15 @@ namespace CShredis.RESP
 
             return false;
         }
+
+		public static int GetCrlfIndex(ReadOnlySpan<byte> span)
+		{
+			var crlfIndex = span.IndexOf((byte)'\r');
+			if (crlfIndex < 0 || crlfIndex == span.Length - 1 || span[crlfIndex + 1] != '\n')
+				return -1;
+
+			return crlfIndex;
+		}
 
 		public static void VerifyCRLF(ReadOnlySpan<byte> span)
 		{

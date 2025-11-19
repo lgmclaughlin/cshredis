@@ -10,30 +10,18 @@ namespace CShredis.RESP
 		{
 			ReadOnlySpan<byte> span = data.Span;
 
-			_ = ParseUtilities.TryParseType(span, RESPType.SimpleError.Qualifier(), RESPType.SimpleError.Name());
+			RESPUtilities.TryParseType(span, RESPType.SimpleError.Qualifier(), RESPType.SimpleError.Name());
 
-			ParseUtilities.VerifyCRLF(span);
+			var crlfIndex = RESPUtilities.GetCrlfIndex(span);
+			if (crlfIndex < 0)
+				return ParseResult.Incomplete;
 
-			var parsedValue = ReadOnlyMemory<byte>.Empty;
+			var parsedValue = data.Slice(1, crlfIndex - 1);
+			var respObject = RESPObject.SimpleError(parsedValue);
 
-			int messageLength;
-			var firstSpace = span.IndexOf((byte)' ');
-			if (firstSpace > -1)
-			{
-				var messageBodyStart = firstSpace + 1;
-				messageLength = data.Length - 2 - messageBodyStart; 
-				parsedValue = data.Slice(messageBodyStart, messageLength);
-			}
-			else
-			{
-				messageLength = data.Length - 3;
-				parsedValue = data.Slice(1, messageLength);
-			}
+			var bytesConsumed = crlfIndex + 2; // add \n and correct for 0-index
 
-			var bytesConsumed = data.Length;
-
-			return ParseResult.Complete(new RESPSimpleError(parsedValue), bytesConsumed);
+			return new ParseResult(respObject, bytesConsumed, ParseStatus.Complete);
 		}
-
 	}
 }

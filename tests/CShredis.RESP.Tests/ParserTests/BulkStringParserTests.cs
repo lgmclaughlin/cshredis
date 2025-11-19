@@ -2,11 +2,11 @@ using System;
 using System.Text;
 using Xunit;
 using CShredis.RESP;
-using Utils = CShredis.RESP.Tests.ParserTestUtilities;
+using Utils = CShredis.RESP.Tests.RESPTestUtilities;
 
 namespace CShredis.RESP.Tests
 {
-	public class BulkStringParserTests : IDisposable
+	public class BulkStringParserTests
 	{
 		private BulkStringParser _parser;
 
@@ -20,15 +20,17 @@ namespace CShredis.RESP.Tests
 		{
 			ReadOnlyMemory<byte> data = Utils.StringToMemoryBytes("$3\r\nhey\r\n");
 			ReadOnlyMemory<byte> expectedData = Utils.StringToMemoryBytes("hey");
+			var expectedType = RESPType.BulkString;
 			var expectedBytesConsumed = data.Length;
 			var expectedStatus = ParseStatus.Complete;
 
-			ParseResult parsedResult = _parser.Parse(data);
+			var parseResultBulkString = (ParseResultBulkString)_parser.Parse(data);
+			var parsedBulkString = parseResultBulkString.ParsedObject!;
 
-			var parsedBulkString = Assert.IsType<RESPBulkString>(parsedResult.ParsedObject);
+			Assert.Equal(expectedType, parsedBulkString.Type);
 			Assert.True(parsedBulkString.Value.Span.SequenceEqual(expectedData.Span));
-			Assert.Equal(expectedBytesConsumed, parsedResult.BytesConsumed);
-			Assert.Equal(expectedStatus, parsedResult.Status);
+			Assert.Equal(expectedBytesConsumed, parseResultBulkString.BytesConsumed);
+			Assert.Equal(expectedStatus, parseResultBulkString.Status);
 		}
 
 		[Fact]
@@ -36,15 +38,17 @@ namespace CShredis.RESP.Tests
 		{
 			ReadOnlyMemory<byte> data = Utils.StringToMemoryBytes("$17\r\ndoubledigitlength\r\n");
 			ReadOnlyMemory<byte> expectedData = Utils.StringToMemoryBytes("doubledigitlength");
+			var expectedType = RESPType.BulkString;
 			var expectedBytesConsumed = data.Length;
 			var expectedStatus = ParseStatus.Complete;
 
-			ParseResult parsedResult = _parser.Parse(data);
+			var parseResultBulkString = (ParseResultBulkString)_parser.Parse(data);
+			var parsedBulkString = parseResultBulkString.ParsedObject!;
 
-			var parsedBulkString = Assert.IsType<RESPBulkString>(parsedResult.ParsedObject);
+			Assert.Equal(expectedType, parsedBulkString.Type);
 			Assert.True(parsedBulkString.Value.Span.SequenceEqual(expectedData.Span));
-			Assert.Equal(expectedBytesConsumed, parsedResult.BytesConsumed);
-			Assert.Equal(expectedStatus, parsedResult.Status);
+			Assert.Equal(expectedBytesConsumed, parseResultBulkString.BytesConsumed);
+			Assert.Equal(expectedStatus, parseResultBulkString.Status);
 		}
 
 		[Fact]
@@ -52,15 +56,17 @@ namespace CShredis.RESP.Tests
 		{
 			ReadOnlyMemory<byte> data = Utils.StringToMemoryBytes("$10\r\nhey\r\nthere\r\n");
 			ReadOnlyMemory<byte> expectedData = Utils.StringToMemoryBytes("hey\r\nthere");
+			var expectedType = RESPType.BulkString;
 			var expectedBytesConsumed = data.Length;
 			var expectedStatus = ParseStatus.Complete;
 
-			ParseResult parsedResult = _parser.Parse(data);
+			var parseResultBulkString = (ParseResultBulkString)_parser.Parse(data);
+			var parsedBulkString = parseResultBulkString.ParsedObject!;
 
-			var parsedBulkString = Assert.IsType<RESPBulkString>(parsedResult.ParsedObject);
+			Assert.Equal(expectedType, parsedBulkString.Type);
 			Assert.True(parsedBulkString.Value.Span.SequenceEqual(expectedData.Span));
-			Assert.Equal(expectedBytesConsumed, parsedResult.BytesConsumed);
-			Assert.Equal(expectedStatus, parsedResult.Status);
+			Assert.Equal(expectedBytesConsumed, parseResultBulkString.BytesConsumed);
+			Assert.Equal(expectedStatus, parseResultBulkString.Status);
 		}
 
 		[Fact]
@@ -68,29 +74,33 @@ namespace CShredis.RESP.Tests
 		{
 			ReadOnlyMemory<byte> data = Utils.StringToMemoryBytes("$0\r\n\r\n");
 			ReadOnlyMemory<byte> expectedData = Utils.StringToMemoryBytes("");
+			var expectedType = RESPType.BulkString;
 			var expectedBytesConsumed = data.Length;
 			var expectedStatus = ParseStatus.Complete;
 
-			ParseResult parsedResult = _parser.Parse(data);
+			var parseResultBulkString = (ParseResultBulkString)_parser.Parse(data);
+			var parsedBulkString = parseResultBulkString.ParsedObject!;
 
-			var parsedBulkString = Assert.IsType<RESPBulkString>(parsedResult.ParsedObject);
+			Assert.Equal(expectedType, parsedBulkString.Type);
 			Assert.True(parsedBulkString.Value.Span.SequenceEqual(expectedData.Span));
-			Assert.Equal(expectedBytesConsumed, parsedResult.BytesConsumed);
-			Assert.Equal(expectedStatus, parsedResult.Status);
+			Assert.Equal(expectedBytesConsumed, parseResultBulkString.BytesConsumed);
+			Assert.Equal(expectedStatus, parseResultBulkString.Status);
 		}
 
 		[Fact]
 		public void ValidNullBulkString_ReturnsNullBulkString()
 		{
 			ReadOnlyMemory<byte> data = Utils.StringToMemoryBytes("$-1\r\n");
+			var expectedType = RESPType.NullBulkString;
 			var expectedBytesConsumed = data.Length;
 			var expectedStatus = ParseStatus.Complete;
 
-			ParseResult parsedResult = _parser.Parse(data);
+			ParseResult parseResult = _parser.Parse(data);
+			var parsedNullBulkString = parseResult.ParsedObject!;
 
-			Assert.IsType<RESPNullBulkString>(parsedResult.ParsedObject);
-			Assert.Equal(expectedBytesConsumed, parsedResult.BytesConsumed);
-			Assert.Equal(expectedStatus, parsedResult.Status);
+			Assert.Equal(expectedType, parsedNullBulkString.Type);
+			Assert.Equal(expectedBytesConsumed, parseResult.BytesConsumed);
+			Assert.Equal(expectedStatus, parseResult.Status);
 		}
 
 		[Theory]
@@ -100,32 +110,36 @@ namespace CShredis.RESP.Tests
 			(string input, int expectedBytesConsumed, int expectedBytesMissing)
 		{
 			ReadOnlyMemory<byte> data = Utils.StringToMemoryBytes(input);
+			var expectedType = RESPType.BulkString;
 			var expectedStatus = ParseStatus.Partial;
 
-			ParseResult parsedResult = _parser.Parse(data);
+			var parseResultBulkString = (ParseResultBulkString)_parser.Parse(data);
+			var parsedBulkString = parseResultBulkString.ParsedObject!;
 
-			var parsedBulkString = Assert.IsType<RESPBulkString>(parsedResult.ParsedObject);
-			Assert.False(parsedBulkString.IsComplete);
-			Assert.Equal(expectedBytesConsumed, parsedResult.BytesConsumed);
-			Assert.Equal(expectedBytesMissing, parsedBulkString.BytesMissing);
-			Assert.Equal(expectedStatus, parsedResult.Status);
+			Assert.Equal(expectedType, parsedBulkString.Type);
+			Assert.False(parseResultBulkString.IsComplete);
+			Assert.Equal(expectedBytesConsumed, parseResultBulkString.BytesConsumed);
+			Assert.Equal(expectedBytesMissing, parseResultBulkString.BytesMissing);
+			Assert.Equal(expectedStatus, parseResultBulkString.Status);
 		}
 
 		[Fact]
 		public void PartialBulkStringWithCompletingMessage_ReturnsCompleteBulkString()
 		{
 			ReadOnlyMemory<byte> dataPartial = Utils.StringToMemoryBytes("$3\r\nhe");
+			var expectedType = RESPType.BulkString;
 			var expectedStatus = ParseStatus.Partial;
 			var expectedBytesConsumed = dataPartial.Length;
 			var expectedBytesMissing = 3;
 
-			ParseResult parsedPartialResult = _parser.Parse(dataPartial);
+			var partialParseResultBulkString = (ParseResultBulkString)_parser.Parse(dataPartial);
+			var parsedPartialBulkString = partialParseResultBulkString.ParsedObject!;
 
-			var parsedPartialBulkString = Assert.IsType<RESPBulkString>(parsedPartialResult.ParsedObject);
-			Assert.False(parsedPartialBulkString.IsComplete);
-			Assert.Equal(expectedBytesConsumed, parsedPartialResult.BytesConsumed);
-			Assert.Equal(expectedBytesMissing, parsedPartialBulkString.BytesMissing);
-			Assert.Equal(expectedStatus, parsedPartialResult.Status);
+			Assert.Equal(expectedType, parsedPartialBulkString.Type);
+			Assert.False(partialParseResultBulkString.IsComplete);
+			Assert.Equal(expectedBytesConsumed, partialParseResultBulkString.BytesConsumed);
+			Assert.Equal(expectedBytesMissing, partialParseResultBulkString.BytesMissing);
+			Assert.Equal(expectedStatus, partialParseResultBulkString.Status);
 
 			ReadOnlyMemory<byte> dataFinal = Utils.StringToMemoryBytes("y\r\n");
 			ReadOnlyMemory<byte> expectedData = Utils.StringToMemoryBytes("hey");
@@ -133,44 +147,48 @@ namespace CShredis.RESP.Tests
 			expectedBytesConsumed = dataFinal.Length;
 			expectedBytesMissing = 0;
 
-			ParseResult parsedResult = _parser.ContinueParse(dataFinal, parsedPartialBulkString);
+			var parseResultBulkString = (ParseResultBulkString)_parser.ContinueParse(dataFinal, partialParseResultBulkString);
+			var parsedBulkString = parseResultBulkString.ParsedObject!;
 
-			var parsedBulkString = Assert.IsType<RESPBulkString>(parsedResult.ParsedObject);
-			Assert.True(parsedBulkString.IsComplete);
+			Assert.Equal(expectedType, parsedBulkString.Type);
+			Assert.True(parseResultBulkString.IsComplete);
 			Assert.True(parsedBulkString.Value.Span.SequenceEqual(expectedData.Span));
-			Assert.Equal(expectedBytesConsumed, parsedResult.BytesConsumed);
-			Assert.Equal(expectedBytesMissing, parsedBulkString.BytesMissing);
-			Assert.Equal(expectedStatus, parsedResult.Status);
+			Assert.Equal(expectedBytesConsumed, parseResultBulkString.BytesConsumed);
+			Assert.Equal(expectedBytesMissing, parseResultBulkString.BytesMissing);
+			Assert.Equal(expectedStatus, parseResultBulkString.Status);
 		}
 
 		[Fact]
 		public void PartialBulkStringWithMultipleCompletingMessages_ReturnsCompleteBulkString()
 		{
 			ReadOnlyMemory<byte> dataPartial = Utils.StringToMemoryBytes("$8\r\nhe");
+			var expectedType = RESPType.BulkString;
 			var expectedStatus = ParseStatus.Partial;
 			var expectedBytesConsumed = dataPartial.Length;
 			var expectedBytesMissing = 8;
 
-			ParseResult parsedPartialResult1 = _parser.Parse(dataPartial);
+			var partialParseResultBulkString1 = (ParseResultBulkString)_parser.Parse(dataPartial);
+			var parsedPartialBulkString1 = partialParseResultBulkString1.ParsedObject!;
 
-			var parsedPartialBulkString1 = Assert.IsType<RESPBulkString>(parsedPartialResult1.ParsedObject);
-			Assert.False(parsedPartialBulkString1.IsComplete);
-			Assert.Equal(expectedBytesConsumed, parsedPartialResult1.BytesConsumed);
-			Assert.Equal(expectedBytesMissing, parsedPartialBulkString1.BytesMissing);
-			Assert.Equal(expectedStatus, parsedPartialResult1.Status);
+			Assert.Equal(expectedType, parsedPartialBulkString1.Type);
+			Assert.False(partialParseResultBulkString1.IsComplete);
+			Assert.Equal(expectedBytesConsumed, partialParseResultBulkString1.BytesConsumed);
+			Assert.Equal(expectedBytesMissing, partialParseResultBulkString1.BytesMissing);
+			Assert.Equal(expectedStatus, partialParseResultBulkString1.Status);
 
 			dataPartial = Utils.StringToMemoryBytes("ada");
 			expectedStatus = ParseStatus.Partial;
 			expectedBytesConsumed = dataPartial.Length;
 			expectedBytesMissing = 5;
 
-			ParseResult parsedPartialResult2 = _parser.ContinueParse(dataPartial, parsedPartialBulkString1);
+			var partialParseResultBulkString2 = (ParseResultBulkString)_parser.ContinueParse(dataPartial, partialParseResultBulkString1);
+			var parsedPartialBulkString2 = partialParseResultBulkString2.ParsedObject!;
 
-			var parsedPartialBulkString2 = Assert.IsType<RESPBulkString>(parsedPartialResult2.ParsedObject);
-			Assert.False(parsedPartialBulkString2.IsComplete);
-			Assert.Equal(expectedBytesConsumed, parsedPartialResult2.BytesConsumed);
-			Assert.Equal(expectedBytesMissing, parsedPartialBulkString2.BytesMissing);
-			Assert.Equal(expectedStatus, parsedPartialResult2.Status);
+			Assert.Equal(expectedType, parsedPartialBulkString2.Type);
+			Assert.False(partialParseResultBulkString2.IsComplete);
+			Assert.Equal(expectedBytesConsumed, partialParseResultBulkString2.BytesConsumed);
+			Assert.Equal(expectedBytesMissing, partialParseResultBulkString2.BytesMissing);
+			Assert.Equal(expectedStatus, partialParseResultBulkString2.Status);
 
 			ReadOnlyMemory<byte> dataFinal = Utils.StringToMemoryBytes("che\r\n");
 			ReadOnlyMemory<byte> expectedData = Utils.StringToMemoryBytes("headache");
@@ -178,31 +196,34 @@ namespace CShredis.RESP.Tests
 			expectedBytesConsumed = dataFinal.Length;
 			expectedBytesMissing = 0;
 
-			ParseResult parsedResult = _parser.ContinueParse(dataFinal, parsedPartialBulkString2);
+			var parseResultBulkString = (ParseResultBulkString)_parser.ContinueParse(dataFinal, partialParseResultBulkString2);
+			var parsedBulkString = parseResultBulkString.ParsedObject!;
 
-			var parsedBulkString = Assert.IsType<RESPBulkString>(parsedResult.ParsedObject);
-			Assert.True(parsedBulkString.IsComplete);
+			Assert.Equal(expectedType, parsedBulkString.Type);
+			Assert.True(parseResultBulkString.IsComplete);
 			Assert.True(parsedBulkString.Value.Span.SequenceEqual(expectedData.Span));
-			Assert.Equal(expectedBytesConsumed, parsedResult.BytesConsumed);
-			Assert.Equal(expectedBytesMissing, parsedBulkString.BytesMissing);
-			Assert.Equal(expectedStatus, parsedResult.Status);
+			Assert.Equal(expectedBytesConsumed, parseResultBulkString.BytesConsumed);
+			Assert.Equal(expectedBytesMissing, parseResultBulkString.BytesMissing);
+			Assert.Equal(expectedStatus, parseResultBulkString.Status);
 		}
 
 		[Fact]
 		public void MismatchedLength_ReturnsPartialBulkString()
 		{
 			ReadOnlyMemory<byte> data = Utils.StringToMemoryBytes("$5\r\nhey\r\n");
+			var expectedType = RESPType.BulkString;
 			var expectedStatus = ParseStatus.Partial;
 			var expectedBytesConsumed = 9;
 			var expectedBytesMissing = 2;
 
-			ParseResult parsedResult = _parser.Parse(data);
+			var parseResultBulkString = (ParseResultBulkString)_parser.Parse(data);
+			var parsedBulkString = parseResultBulkString.ParsedObject!;
 
-			var parsedBulkString = Assert.IsType<RESPBulkString>(parsedResult.ParsedObject);
-			Assert.False(parsedBulkString.IsComplete);
-			Assert.Equal(expectedBytesConsumed, parsedResult.BytesConsumed);
-			Assert.Equal(expectedBytesMissing, parsedBulkString.BytesMissing);
-			Assert.Equal(expectedStatus, parsedResult.Status);
+			Assert.Equal(expectedType, parsedBulkString.Type);
+			Assert.False(parseResultBulkString.IsComplete);
+			Assert.Equal(expectedBytesConsumed, parseResultBulkString.BytesConsumed);
+			Assert.Equal(expectedBytesMissing, parseResultBulkString.BytesMissing);
+			Assert.Equal(expectedStatus, parseResultBulkString.Status);
 		}
 
 		[Theory]
@@ -223,11 +244,6 @@ namespace CShredis.RESP.Tests
 			ReadOnlyMemory<byte> data = Utils.StringToMemoryBytes(input);
 
 			Assert.Throws<InvalidOperationException>(() => _parser.Parse(data));
-		}
-
-		public void Dispose()
-		{
-			_parser = null;
 		}
 	}
 }

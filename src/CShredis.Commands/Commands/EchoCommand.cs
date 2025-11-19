@@ -9,9 +9,9 @@ namespace CShredis.Commands
 		public CommandResult Execute(CommandEnvelope commandEnvelope)
 		{
 			if (commandEnvelope.Arguments.Count != 1)
-				return new CommandResult(new RESPSimpleError("wrong number of arguments for command"));
+				return new CommandResult(new RESPObject(RESPType.SimpleError, "ERR wrong number of arguments for command"));
 
-			return new CommandResult(new RESPBulkString(commandEnvelope.Arguments[0]));
+			return new CommandResult(new RESPObject(RESPType.BulkString, commandEnvelope.Arguments[0]));
 		}
 	}
 }

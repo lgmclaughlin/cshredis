@@ -8,52 +8,47 @@ namespace CShredis.RESP
 		{
 			ReadOnlySpan<byte> span = data.Span;
 
-			if (!ParseUtilities.TryParseType(span, RESPType.BulkString.Qualifier(), RESPType.BulkString.Name()))
+			if (!RESPUtilities.TryParseType(span, RESPType.BulkString.Qualifier(), RESPType.BulkString.Name()))
 				return ParseResult.Incomplete;
 
-			if (!ParseUtilities.TryParseLength(span, out int declaredLength, out int lengthBytesConsumed))
+			if (!RESPUtilities.TryParseLength(span, out int declaredLength, out int lengthBytesConsumed))
 				return ParseResult.Incomplete;
 
 			if (declaredLength == -1)
-				return ParseResult.Complete(new RESPNullBulkString(), lengthBytesConsumed);
+				return new ParseResult(RESPObject.NullBulkString(), lengthBytesConsumed);
 
-			var lengthWithCRLF = declaredLength + 2;
+			var declaredLengthAndCrlf = declaredLength + 2;
 
 			var bodyStart = lengthBytesConsumed;
 			int bytesConsumed;
 
-			if (span.Length < lengthBytesConsumed + lengthWithCRLF)
+			if (span.Length < lengthBytesConsumed + declaredLengthAndCrlf)
 			{
 				var partialBodyLength = span.Length - lengthBytesConsumed;
 				var partialParsedValue = data.Slice(bodyStart, partialBodyLength);
 
 				bytesConsumed = lengthBytesConsumed + partialBodyLength;
 
-				return ParseResult.Partial(new RESPBulkString(partialParsedValue, declaredLength), bytesConsumed);
+				return new ParseResultBulkString(partialParsedValue, declaredLength, lengthBytesConsumed);
 			}
 
-			var parsedValue = data.Slice(bodyStart, lengthWithCRLF);
+			var parsedValue = data.Slice(bodyStart, declaredLengthAndCrlf);
 			bytesConsumed = lengthBytesConsumed + parsedValue.Length;
 
-			return ParseResult.Complete(new RESPBulkString(parsedValue), bytesConsumed);
+			return new ParseResultBulkString(parsedValue, declaredLength, lengthBytesConsumed);
 		}
 
-		public ParseResult ContinueParse(ReadOnlyMemory<byte> data, RESPObject partial)
+		public ParseResult ContinueParse(ReadOnlyMemory<byte> data, ParseResult parseResult)
 		{
-			var respBulkString = (RESPBulkString)partial;
-
+			var partialParseResultBulkString = (ParseResultBulkString)parseResult;
 			ReadOnlySpan<byte> span = data.Span;
 
-			int bytesConsumed = Math.Min(respBulkString.BytesMissing, span.Length);
+			int lengthToAppend = Math.Min(partialParseResultBulkString.BytesMissing, span.Length);
+			var slice = data.Slice(0, lengthToAppend);
 
-			var slice = data.Slice(0, bytesConsumed);
+			partialParseResultBulkString.Append(slice);
 
-			respBulkString.Append(slice);
-
-			if (respBulkString.IsComplete)
-				return ParseResult.Complete(respBulkString, bytesConsumed);
-			else
-				return ParseResult.Partial(respBulkString, bytesConsumed);
+			return partialParseResultBulkString;
 		}
 	}
 }

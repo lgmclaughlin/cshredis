@@ -2,11 +2,11 @@ using System;
 using System.Text;
 using Xunit;
 using CShredis.RESP;
-using Utils = CShredis.RESP.Tests.ParserTestUtilities;
+using Utils = CShredis.RESP.Tests.RESPTestUtilities;
 
 namespace CShredis.RESP.Tests
 {
-	public class ParseUtilitiesTests
+	public class RESPUtilitiesTests
 	{
 		[Theory]
 		[InlineData("$3\r\nhey\r\n")]
@@ -18,7 +18,7 @@ namespace CShredis.RESP.Tests
 			var expectedLength = 3;
 			var expectedBytesConsumed = 4;
 
-			bool complete = ParseUtilities.TryParseLength(span, out int length, out int bytesConsumed);
+			bool complete = RESPUtilities.TryParseLength(span, out int length, out int bytesConsumed);
 
 			Assert.True(complete);
 			Assert.Equal(expectedLength, length);
@@ -35,7 +35,7 @@ namespace CShredis.RESP.Tests
 			var expectedLength = 3;
 			var expectedBytesConsumed = 4;
 
-			bool complete = ParseUtilities.TryParseLength(span, out int length, out int bytesConsumed);
+			bool complete = RESPUtilities.TryParseLength(span, out int length, out int bytesConsumed);
 
 			Assert.True(complete);
 			Assert.Equal(expectedLength, length);
@@ -49,7 +49,7 @@ namespace CShredis.RESP.Tests
 			var expectedLength = 158;
 			var expectedBytesConsumed = 6;
 
-			bool complete = ParseUtilities.TryParseLength(span, out int length, out int bytesConsumed);
+			bool complete = RESPUtilities.TryParseLength(span, out int length, out int bytesConsumed);
 
 			Assert.True(complete);
 			Assert.Equal(expectedLength, length);
@@ -63,7 +63,7 @@ namespace CShredis.RESP.Tests
 			var expectedLength = -1;
 			var expectedBytesConsumed = 5;
 
-			bool complete = ParseUtilities.TryParseLength(span, out int length, out int bytesConsumed);
+			bool complete = RESPUtilities.TryParseLength(span, out int length, out int bytesConsumed);
 
 			Assert.True(complete);
 			Assert.Equal(expectedLength, length);
@@ -81,7 +81,7 @@ namespace CShredis.RESP.Tests
 			var expectedLength = 0;
 			var expectedBytesConsumed = 0;
 
-			bool complete = ParseUtilities.TryParseLength(span, out int length, out int bytesConsumed);
+			bool complete = RESPUtilities.TryParseLength(span, out int length, out int bytesConsumed);
 
 			Assert.False(complete);
 			Assert.Equal(expectedLength, length);
@@ -97,7 +97,7 @@ namespace CShredis.RESP.Tests
 			byte[] span = Encoding.UTF8.GetBytes(input);
 
 			Assert.Throws<InvalidOperationException>(() 
-					=> ParseUtilities.TryParseLength(span, out int length, out int bytesConsumed));
+					=> RESPUtilities.TryParseLength(span, out int length, out int bytesConsumed));
 		}
 	
 		[Theory]
@@ -108,7 +108,7 @@ namespace CShredis.RESP.Tests
 			byte[] span = Encoding.UTF8.GetBytes(input);
 
 			Assert.Throws<InvalidOperationException>(() 
-					=> ParseUtilities.TryParseLength(span, out int length, out int bytesConsumed));
+					=> RESPUtilities.TryParseLength(span, out int length, out int bytesConsumed));
 		}
 
 		[Fact]
@@ -117,7 +117,7 @@ namespace CShredis.RESP.Tests
 			byte[] span = Encoding.UTF8.GetBytes("$3??");
 
 			Assert.Throws<InvalidOperationException>(() 
-					=> ParseUtilities.TryParseLength(span, out int length, out int bytesConsumed));
+					=> RESPUtilities.TryParseLength(span, out int length, out int bytesConsumed));
 		}
 	}
 }
