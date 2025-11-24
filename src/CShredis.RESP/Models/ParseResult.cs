@@ -1,6 +1,6 @@
 namespace CShredis.RESP
 {
-	public record ParseResult
+	public class ParseResult
 	{
 		public RESPObject? ParsedObject { get; set; }
 		public int BytesConsumed { get; set; }

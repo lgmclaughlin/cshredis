@@ -31,7 +31,7 @@ namespace CShredis.Network
 					}
 					
 					string[] tokens = Regex.Matches(input, @"[\""].+?[\""]|[^ ]+")
-						.Select(m => m.Value)
+						.Select(m => m.Value.Replace("\"", ""))
 						.ToArray(); 
 
 					if (tokens.Length == 0)

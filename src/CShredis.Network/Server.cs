@@ -10,6 +10,7 @@ using System.Runtime.InteropServices;
 using Mono.Unix.Native;
 using CShredis.RESP;
 using CShredis.Commands;
+using CShredis.Core;
 using Encoder = CShredis.RESP.Encoder;
 
 namespace CShredis.Network
@@ -33,10 +34,14 @@ namespace CShredis.Network
 		private Dictionary<int, Client> _clients = new Dictionary<int, Client>();
 		private bool _running = false;
 		private static readonly ParseDispatcher _parseDispatcher = new();
-		private static readonly CommandDispatcher _commandDispatcher = new();
+		private readonly CommandDispatcher _commandDispatcher;
+		private readonly RedisState _state;
 
 		public Server()
 		{
+			_state = new RedisState();
+			_commandDispatcher = new CommandDispatcher(_state);
+
 			_log.Info("Creating epoll.");
 
 			_epollFd = Syscall.epoll_create(1);

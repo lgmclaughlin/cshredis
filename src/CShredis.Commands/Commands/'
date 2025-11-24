@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using CShredis.RESP;
-using CShredis.Core;
 
 namespace CShredis.Commands
 {
@@ -19,8 +18,8 @@ namespace CShredis.Commands
 			{
 				{ "PING", new PingCommand() },
 				{ "ECHO", new EchoCommand() },
-				{ "GET",  new GetCommand(_state)  },
-				{ "SET",  new SetCommand(_state)  }
+				{ "GET",  new GetCommand()  },
+				{ "SET",  new SetCommand()  }
 			};
 		}
 

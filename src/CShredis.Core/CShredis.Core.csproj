@@ -1,19 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <OutputType>Library</OutputType>
     <TargetFramework>net9.0</TargetFramework>
-    <RootNamespace>CShredis.Network</RootNamespace>
+    <RootNamespace>CShredis.Core</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Mono.Posix.NETStandard" Version="1.0.0" />
     <ProjectReference Include="..\..\src\CShredis.RESP\CShredis.RESP.csproj" />
-    <ProjectReference Include="..\..\src\CShredis.Commands\CShredis.Commands.csproj" />
-    <ProjectReference Include="..\..\src\CShredis.Core\CShredis.Core.csproj" />
   </ItemGroup>
 
 </Project>

@@ -2,7 +2,7 @@ using System.Text;
 
 namespace CShredis.RESP
 {
-	public sealed record ParseResultArray : ParseResult
+	public sealed class ParseResultArray : ParseResult
 	{
 		public ParseResult? Partial { get; private set; }
 		public int DeclaredLength { get; private set; }

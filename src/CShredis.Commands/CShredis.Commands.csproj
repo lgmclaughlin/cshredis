@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\CShredis.RESP\CShredis.RESP.csproj" />
+    <ProjectReference Include="..\..\src\CShredis.Core\CShredis.Core.csproj" />
   </ItemGroup>
 
 </Project>

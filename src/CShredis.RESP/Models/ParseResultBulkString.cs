@@ -2,7 +2,7 @@ using System.Text;
 
 namespace CShredis.RESP
 {
-	public sealed record ParseResultBulkString : ParseResult
+	public sealed class ParseResultBulkString : ParseResult
 	{
 		private byte[]? _buffer;
 		private int _bytesWritten = 0;

@@ -26,7 +26,7 @@ namespace CShredis.RESP
 			return printer(respObject);
 		}
 
-		public static string PrintDefault(RESPObject respObject) => respObject.ValueString;
+		public static string PrintDefault(RESPObject respObject) => $"\"{respObject.ValueString}\"";
 
 		public static string PrintNull(RESPObject respObject) => "(nil)";
 
