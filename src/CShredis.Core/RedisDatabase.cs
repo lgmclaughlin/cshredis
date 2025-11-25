@@ -5,12 +5,12 @@ namespace CShredis.Core
 {
 	public sealed class RedisDatabase
 	{
-		private Dictionary<string, RedisObject> _db = new(); 
+		private Dictionary<ReadOnlyMemory<byte>, RedisObject> _db = new(new ByteMemoryComparer()); 
 
 		public RedisDatabase() { }
 
 		public (bool Success, RedisObject? PreviousValue) Set(
-				string key,
+				ReadOnlyMemory<byte> key,
 				RedisObject value,
 				long? ttlMs = null,
 				bool nx = false,
@@ -29,7 +29,7 @@ namespace CShredis.Core
 			return (true, null);
 		}
 
-		public RedisObject? Get(string key)
+		public RedisObject? Get(ReadOnlyMemory<byte> key)
 		{
 			// TODO check expiry, remove if needed
 

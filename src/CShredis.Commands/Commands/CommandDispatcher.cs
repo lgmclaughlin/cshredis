@@ -31,23 +31,27 @@ namespace CShredis.Commands
 
 			var commandArray = (RESPArray)command;
 
-			if (commandArray.Count == 0)
+			int count = commandArray.Elements.Count;
+			if (count == 0)
 				return new CommandResult(new RESPObject(RESPType.SimpleError, "no command to execute"));
 
 			if (commandArray.Elements.Any(e => e.Type != RESPType.BulkString))
 				throw new ArgumentException("Invalid command types. Bulk strings expected.", nameof(command));
 
-			var commandStrings = commandArray.Elements.Select(el => el.ValueString).ToList();
-			var commandName = commandStrings[0];
+			var commandName = Encoding.ASCII.GetString(commandArray.Elements[0].Value.Span);
+
+			var argStrings = new string[count - 1];
+			var argBytes = new ReadOnlyMemory<byte>[count - 1];
+			for (int i = 0; i < count - 1; i++)
+			{
+				argStrings[i] = commandArray.Elements[i + 1].ValueString;
+				argBytes[i] = commandArray.Elements[i + 1].Value;
+			}
 
 			if (!_handlers.TryGetValue(commandName, out var handler))
 				return new CommandResult(new RESPObject(RESPType.SimpleError, $"unknown command '{commandName}'"));
 
-			var commandArgs = (commandStrings.Count > 1)
-				? commandStrings.GetRange(1, commandStrings.Count - 1)
-				: new List<string>();
-
-			var commandEnvelope = new CommandEnvelope(commandName.ToUpper(), commandArgs);
+			var commandEnvelope = new CommandEnvelope(commandName.ToUpper(), argStrings, argBytes);
 
 			return handler.Execute(commandEnvelope);
 		}

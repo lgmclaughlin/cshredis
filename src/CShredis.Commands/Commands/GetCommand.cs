@@ -15,10 +15,10 @@ namespace CShredis.Commands
 
 		public CommandResult Execute(CommandEnvelope commandEnvelope)
 		{
-			if (commandEnvelope.Arguments.Count != 1)
+			if (commandEnvelope.Arguments.Length != 1)
 				return new CommandResult(new RESPObject(RESPType.SimpleError, "ERR wrong number of arguments for command"));
 			
-			var redisObject = _state.CurrentDb.Get(commandEnvelope.Arguments[0]);
+			var redisObject = _state.CurrentDb.Get(commandEnvelope.ByteArguments[0]);
 
 			if (redisObject == null)
 				return new CommandResult(RESPObject.NullBulkString());
