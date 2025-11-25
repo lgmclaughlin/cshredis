@@ -16,55 +16,50 @@ namespace CShredis.Network
     public sealed class NetworkLogger
     {
         private static readonly object _lock = new();
-        private static NetworkLogger? _instance;
-        private StreamWriter _writer;
-        private readonly string _componentName;
-        private readonly bool _alsoConsole;
+        private static StreamWriter _writer;
+        private static bool _alsoConsole;
+		private static string _logFilePath = "log/cshredis-server.log";
+
+		private readonly string _componentName;
 		private static readonly int _maxLogFileSize = 10000000;
 
         public static LogLevel MinLevel { get; private set; } = LogLevel.Info;
-        public static string LogFilePath { get; private set; } = "network.log";
-
-        private NetworkLogger(string componentName, bool alsoConsole)
+		
+        private NetworkLogger(string componentName)
         {
-            _componentName = componentName;
-            _alsoConsole = alsoConsole;
-
-            Directory.CreateDirectory(Path.GetDirectoryName(LogFilePath)!);
-
-            _writer = new StreamWriter(File.Open(LogFilePath, FileMode.Append, FileAccess.Write, FileShare.Read))
-            {
-                AutoFlush = true
-            };
+			_componentName = componentName;
         }
 
-        public static void Initialize(string? logFilePath = null, LogLevel? minLevel = null, bool alsoConsole = true)
+		public static NetworkLogger For(string componentName)
+		{
+			if (_writer == null)
+				throw new InvalidOperationException("Initialize first.");
+
+			return new NetworkLogger(componentName);
+		}
+
+        public static void Initialize(LogLevel? minLevel = null, bool alsoConsole = true)
         {
             lock (_lock)
             {
-                if (_instance != null)
-                    _instance._writer?.Dispose();
-
-                LogFilePath = logFilePath ?? LogFilePath;
+				_alsoConsole = alsoConsole;
                 MinLevel = minLevel ?? MinLevel;
 
-				if (File.Exists(LogFilePath) && new FileInfo(LogFilePath).Length > _maxLogFileSize)
+				Directory.CreateDirectory(Path.GetDirectoryName(_logFilePath)!);
+				if (File.Exists(_logFilePath) && new FileInfo(_logFilePath).Length > _maxLogFileSize)
 				{
-					var rotated = $"{LogFilePath}.{DateTime.Now:yyyyMMddHHmmss}";
-					File.Move(LogFilePath, rotated);
+					var rotated = $"{_logFilePath}.{DateTime.Now:yyyyMMddHHmmssfff}";
+					File.Move(_logFilePath, rotated);
 				}
 
-                _instance = new NetworkLogger("Global", alsoConsole);
-                _instance.Info($"Logger initialized at level {MinLevel} to {LogFilePath}");
+				_writer?.Dispose();
+				_writer = new StreamWriter(File.Open(_logFilePath, FileMode.Append, FileAccess.Write, FileShare.Read))
+				{
+					AutoFlush = true
+				};
+
+                For("Global").Info($"Logger initialized at level {MinLevel} to {_logFilePath}");
             }
-        }
-
-        public static NetworkLogger For(string componentName)
-        {
-            if (_instance == null)
-                throw new InvalidOperationException("NetworkLogger not initialized. Call Initialize() first.");
-
-            return new NetworkLogger(componentName, _instance._alsoConsole);
         }
 
         public void Log(LogLevel level, string message)
@@ -75,6 +70,8 @@ namespace CShredis.Network
 			var logLine = $"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} {cliLine}";
             lock (_lock)
             {
+				if (_writer is null) return;
+
                 _writer.WriteLine(logLine);
                 if (_alsoConsole) Console.WriteLine(cliLine);
             }
@@ -91,7 +88,7 @@ namespace CShredis.Network
             lock (_lock)
             {
                 MinLevel = level;
-                _instance?.Info($"Log level changed to {level}");
+                For("Global").Info($"Log level changed to {level}");
             }
         }
 
@@ -99,9 +96,9 @@ namespace CShredis.Network
         {
             lock (_lock)
             {
-                _instance?.Info("Logger shutting down.");
-                _instance?._writer?.Dispose();
-                _instance = null;
+                _writer?.WriteLine($"Logger shutting down.");
+                _writer?.Dispose();
+				_writer = null;
             }
         }
     }

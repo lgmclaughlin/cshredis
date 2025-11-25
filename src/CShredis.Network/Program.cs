@@ -7,8 +7,6 @@ namespace CShredis.Network
 	{
 		static void Main()
 		{
-			NetworkLogger.Initialize("logs/network.log", LogLevel.Trace);
-
 			try
 			{
 				var server = new Server();

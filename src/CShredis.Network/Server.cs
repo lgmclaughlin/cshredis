@@ -42,6 +42,7 @@ namespace CShredis.Network
 			_state = new RedisState();
 			_commandDispatcher = new CommandDispatcher(_state);
 
+			NetworkLogger.Initialize(LogLevel.Trace);
 			_log.Info("Creating epoll.");
 
 			_epollFd = Syscall.epoll_create(1);
@@ -100,6 +101,7 @@ namespace CShredis.Network
 			_clients.Clear();
 
 			_log.Info("Server stopped.");
+			NetworkLogger.Shutdown();
 		}
 
 		private void SetupWakeUpPipe()
