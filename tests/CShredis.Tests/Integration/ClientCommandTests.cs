@@ -10,11 +10,8 @@ namespace CShredis.Tests
 	public class ClientCommandTests : IDisposable
 	{
 		private const int CLIENT_PORT = 6379;
-
 		private const string CLIENT_HOSTNAME = "localhost";
-
 		private Server _server;
-
 		private Thread _serverThread;
 
 		public ClientCommandTests()
@@ -73,6 +70,39 @@ namespace CShredis.Tests
 
 			var response2 = GetResponse(stream2);
 			Assert.Equal("+PONG\r\n", response2);
+		}
+
+		[Fact]
+		public void SetCommandAndGetCommand_ReturnOKAndValue()
+		{
+			var stream = GetNewClientStream();
+
+			var request1 = "*3\r\n$3\r\nSET\r\n$4\r\nblue\r\n$3\r\njam\r\n";
+
+			SendRequest(request1, stream);
+
+			var response1 = GetResponse(stream);
+			Assert.Equal("+OK\r\n", response1);
+
+			var request2 = "*2\r\n$3\r\nGET\r\n$4\r\nblue\r\n";
+
+			SendRequest(request2, stream);
+
+			var response2 = GetResponse(stream);
+			Assert.Equal("$3\r\njam\r\n", response2);
+		}
+
+		[Fact]
+		public void GetCommand_ReturnsNull()
+		{
+			var stream = GetNewClientStream();
+
+			var request = "*2\r\n$3\r\nGET\r\n$4\r\nblue\r\n";
+
+			SendRequest(request, stream);
+
+			var response = GetResponse(stream);
+			Assert.Equal("$-1\r\n", response);
 		}
 
 		private NetworkStream GetNewClientStream()

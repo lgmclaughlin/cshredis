@@ -37,8 +37,9 @@ namespace CShredis.Tests
 
 			ParseResult parsedPartialResult1 = _dispatcher.Parse(dataPartial);
 
+			var parsedPartialResultArray1 = Assert.IsType<ParseResultArray>(parsedPartialResult1);
 			var parsedPartialArray1 = Assert.IsType<RESPArray>(parsedPartialResult1.ParsedObject);
-			Assert.False(parsedPartialArray1.IsComplete);
+			Assert.False(parsedPartialResultArray1.IsComplete);
 			Assert.Equal(expectedBytesConsumed, parsedPartialResult1.BytesConsumed);
 			Assert.Equal(expectedCount, parsedPartialArray1.Count);
 			Assert.Equal(expectedStatus, parsedPartialResult1.Status);
@@ -48,10 +49,11 @@ namespace CShredis.Tests
 			expectedBytesConsumed = dataPartial.Length;
 			expectedCount = 2;
 
-			ParseResult parsedPartialResult2 = _dispatcher.Parse(dataPartial);
+			ParseResult parsedPartialResult2 = _dispatcher.ContinueParse(dataPartial, parsedPartialResult1);
 
+			var parsedPartialResultArray2 = Assert.IsType<ParseResultArray>(parsedPartialResult2);
 			var parsedPartialArray2 = Assert.IsType<RESPArray>(parsedPartialResult2.ParsedObject);
-			Assert.False(parsedPartialArray2.IsComplete);
+			Assert.False(parsedPartialResultArray2.IsComplete);
 			Assert.Equal(expectedBytesConsumed, parsedPartialResult2.BytesConsumed);
 			Assert.Equal(expectedCount, parsedPartialArray2.Count);
 			Assert.Equal(expectedStatus, parsedPartialResult2.Status);
@@ -61,10 +63,11 @@ namespace CShredis.Tests
 			expectedBytesConsumed = dataFinal.Length;
 			expectedCount = 3;
 
-			ParseResult parsedResult = _dispatcher.Parse(dataFinal);
+			ParseResult parsedResult = _dispatcher.ContinueParse(dataFinal, parsedPartialResult2);
 
+			var parsedResultArray = Assert.IsType<ParseResultArray>(parsedResult);
 			var parsedArray = Assert.IsType<RESPArray>(parsedResult.ParsedObject);
-			Assert.True(parsedArray.IsComplete);
+			Assert.True(parsedResultArray.IsComplete);
 			Assert.Equal(expectedBytesConsumed, parsedResult.BytesConsumed);
 			Assert.Equal(expectedCount, parsedArray.Count);
 			Assert.Equal(expectedStatus, parsedResult.Status);
@@ -82,7 +85,8 @@ namespace CShredis.Tests
 
 			ParseResult parsedResult = _dispatcher.Parse(data);
 
-			var parsedBulkString = Assert.IsType<RESPBulkString>(parsedResult.ParsedObject);
+			var parsedBulkString = parsedResult.ParsedObject;
+			Assert.Equal(parsedBulkString.Type, RESPType.BulkString);
 			Assert.True(parsedBulkString.Value.Span.SequenceEqual(expectedData.Span));
 			Assert.Equal(expectedBytesConsumed, parsedResult.BytesConsumed);
 			Assert.Equal(expectedStatus, parsedResult.Status);
@@ -96,13 +100,13 @@ namespace CShredis.Tests
 			var expectedBytesConsumed = dataPartial.Length;
 			var expectedBytesMissing = 3;
 
-			ParseResult parsedPartialResult = _dispatcher.Parse(dataPartial);
+			ParseResult partialParseResult = _dispatcher.Parse(dataPartial);
 
-			var parsedPartialBulkString = Assert.IsType<RESPBulkString>(parsedPartialResult.ParsedObject);
-			Assert.False(parsedPartialBulkString.IsComplete);
-			Assert.Equal(expectedBytesConsumed, parsedPartialResult.BytesConsumed);
-			Assert.Equal(expectedBytesMissing, parsedPartialBulkString.BytesMissing);
-			Assert.Equal(expectedStatus, parsedPartialResult.Status);
+			var partialParseResultBulkString = Assert.IsType<ParseResultBulkString>(partialParseResult);
+			Assert.False(partialParseResultBulkString.IsComplete);
+			Assert.Equal(expectedBytesConsumed, partialParseResultBulkString.BytesConsumed);
+			Assert.Equal(expectedBytesMissing, partialParseResultBulkString.BytesMissing);
+			Assert.Equal(expectedStatus, partialParseResultBulkString.Status);
 
 			ReadOnlyMemory<byte> dataFinal = Utils.StringToMemoryBytes("y\r\n");
 
@@ -111,14 +115,15 @@ namespace CShredis.Tests
 			expectedBytesConsumed = dataFinal.Length;
 			expectedBytesMissing = 0;
 
-			ParseResult parsedResult = _dispatcher.ContinueParse(dataFinal, parsedPartialBulkString);
+			ParseResult parseResult = _dispatcher.ContinueParse(dataFinal, partialParseResult);
 
-			var parsedBulkString = Assert.IsType<RESPBulkString>(parsedResult.ParsedObject);
-			Assert.True(parsedBulkString.IsComplete);
+			var parseResultBulkString = Assert.IsType<ParseResultBulkString>(parseResult);
+			var parsedBulkString = parseResult.ParsedObject;
+			Assert.True(parseResultBulkString.IsComplete);
 			Assert.True(parsedBulkString.Value.Span.SequenceEqual(expectedData.Span));
-			Assert.Equal(expectedBytesConsumed, parsedResult.BytesConsumed);
-			Assert.Equal(expectedBytesMissing, parsedBulkString.BytesMissing);
-			Assert.Equal(expectedStatus, parsedResult.Status);
+			Assert.Equal(expectedBytesConsumed, parseResultBulkString.BytesConsumed);
+			Assert.Equal(expectedBytesMissing, parseResultBulkString.BytesMissing);
+			Assert.Equal(expectedStatus, parseResultBulkString.Status);
 		}
 	}
 }
