@@ -5,8 +5,7 @@ namespace CShredis.RESP
 {
 	public static class Encoder
 	{
-		private static readonly Dictionary<RESPType, Func<RESPObject, string>> _encoders = 
-			new Dictionary<RESPType, Func<RESPObject, string>>()
+		private static readonly Dictionary<RESPType, Func<RESPObject, string>> _encoders = new()
 			{
 				{ RESPType.Array, EncodeArray },
 				{ RESPType.BulkError, EncodeBulk },

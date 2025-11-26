@@ -5,8 +5,7 @@ namespace CShredis.RESP
 {
 	public static class Printer
 	{
-		private static readonly Dictionary<RESPType, Func<RESPObject, string>> _printers =
-			new Dictionary<RESPType, Func<RESPObject, string>>()
+		private static readonly Dictionary<RESPType, Func<RESPObject, string>> _printers = new()
 			{
 				{ RESPType.Array, PrintArray },
 				{ RESPType.BulkError, PrintDefault },
