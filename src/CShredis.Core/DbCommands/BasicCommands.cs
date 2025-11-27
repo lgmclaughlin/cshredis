@@ -6,7 +6,7 @@ namespace CShredis.Core.DbCommands
 	{
 		public BasicCommands() { }
 
-		public (bool Success, RedisObject? PreviousValue) Set(
+		public RedisObject? Set(
 				RedisDb db,
 				ReadOnlyMemory<byte> key,
 				RedisObject value,
@@ -14,7 +14,9 @@ namespace CShredis.Core.DbCommands
 		{
 			RedisObject? previousValue = null;
 			if (setOptions.GetPrevious)
-				previousValue = Get(db, key);
+			{
+				previousValue = Get(db, key) ?? RedisObject.Null;
+			}
 
 			db.Db[key] = value;
 
@@ -28,7 +30,7 @@ namespace CShredis.Core.DbCommands
 				_ = db.Expiry.Remove(key);
 			}
 
-			return (true, previousValue);
+			return previousValue;
 		}
 
 		public void SetExpiry(RedisDb db, ReadOnlyMemory<byte> key, long expires)

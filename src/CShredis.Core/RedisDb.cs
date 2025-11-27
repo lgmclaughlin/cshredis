@@ -13,7 +13,7 @@ namespace CShredis.Core
 
 		public RedisDb() { }
 
-		public (bool Success, RedisObject? PreviousValue) Set(
+		public RedisObject? Set(
 				ReadOnlyMemory<byte> key,
 				RedisObject value,
 				SetOptions setOptions)

@@ -33,7 +33,7 @@ namespace CShredis.Commands
 
 			int count = commandArray.Elements.Count;
 			if (count == 0)
-				return new CommandResult(new RESPObject(RESPType.SimpleError, "no command to execute"));
+				return new CommandResult(RESPObject.SimpleError("no command to execute"));
 
 			if (commandArray.Elements.Any(e => e.Type != RESPType.BulkString))
 				throw new ArgumentException("Invalid command types. Bulk strings expected.", nameof(command));
@@ -49,7 +49,7 @@ namespace CShredis.Commands
 			}
 
 			if (!_handlers.TryGetValue(commandName, out var handler))
-				return new CommandResult(new RESPObject(RESPType.SimpleError, $"unknown command '{commandName}'"));
+				return new CommandResult(RESPObject.SimpleError($"unknown command '{commandName}'"));
 
 			var commandEnvelope = new CommandEnvelope(commandName.ToUpper(), argStrings, argBytes);
 

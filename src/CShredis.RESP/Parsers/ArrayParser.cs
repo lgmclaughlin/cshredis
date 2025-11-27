@@ -23,10 +23,7 @@ namespace CShredis.RESP
 				return ParseResult.Incomplete;
 
 			if (length == -1)
-			{
-				var respObject = new RESPObject(RESPType.NullArray);
 				return new ParseResult(RESPObject.NullArray(), lengthBytesConsumed);
-			}
 
 			var offset = lengthBytesConsumed;
 			var parseResultArray = new ParseResultArray(length);

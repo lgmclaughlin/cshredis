@@ -74,9 +74,15 @@ namespace CShredis.Commands
 
 			var redisObjectToStore = new RedisObject(RedisType.String, commandEnvelope.ByteArguments[1]);
 			
-			_ = _state.CurrentDb.Set(commandEnvelope.ByteArguments[0], redisObjectToStore, setOptions);
+			RedisObject? previousValue  = _state.CurrentDb.Set(commandEnvelope.ByteArguments[0], redisObjectToStore, setOptions);
 
-			return CommandResult.SimpleString("OK");
+			var commandResult = CommandResult.SimpleString("OK");
+			if (previousValue is not null)
+				commandResult = (previousValue.Type != RedisType.Null)
+					? CommandResult.BulkString(previousValue.Value)
+					: CommandResult.NullBulkString();
+
+			return commandResult;
 		}
 
 		private static (bool Success, string? ErrorMessage) ParseEx(SetOptions options, string? ex)

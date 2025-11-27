@@ -23,25 +23,40 @@ namespace CShredis.RESP
 			Value = value ?? ReadOnlyMemory<byte>.Empty;
 		}
 
-		public static RESPObject BulkError(ReadOnlyMemory<byte>? value = null) =>
-			new(RESPType.BulkError, value);
+		public static RESPObject BulkError(ReadOnlyMemory<byte>? value = null)
+			=> new(RESPType.BulkError, value);
 
-		public static RESPObject BulkString(ReadOnlyMemory<byte>? value = null) =>
-			new(RESPType.BulkString, value);
+		public static RESPObject BulkError(string value)
+			=> new(RESPType.BulkError, value);
 
-		public static RESPObject Integer(ReadOnlyMemory<byte>? value) =>
-			new(RESPType.Integer, value);
+		public static RESPObject BulkString(ReadOnlyMemory<byte>? value = null)
+			=> new(RESPType.BulkString, value);
 
-		public static RESPObject NullArray() =>
-			new(RESPType.NullArray);
+		public static RESPObject BulkString(string value)
+			=> new(RESPType.BulkString, value);
 
-		public static RESPObject NullBulkString() =>
-			new(RESPType.NullBulkString);
+		public static RESPObject Integer(ReadOnlyMemory<byte>? value)
+			=> new(RESPType.Integer, value);
 
-		public static RESPObject SimpleError(ReadOnlyMemory<byte>? value) =>
-			new(RESPType.SimpleError, value);
+		public static RESPObject Integer(string value)
+			=> new(RESPType.Integer, value);
 
-		public static RESPObject SimpleString(ReadOnlyMemory<byte>? value) =>
-			new(RESPType.SimpleString, value);
+		public static RESPObject NullArray()
+			=> new(RESPType.NullArray);
+
+		public static RESPObject NullBulkString()
+			=> new(RESPType.NullBulkString);
+
+		public static RESPObject SimpleError(ReadOnlyMemory<byte>? value)
+			=> new(RESPType.SimpleError, value);
+
+		public static RESPObject SimpleError(string value)
+			=> new(RESPType.SimpleError, value);
+
+		public static RESPObject SimpleString(ReadOnlyMemory<byte>? value)
+			=> new(RESPType.SimpleString, value);
+
+		public static RESPObject SimpleString(string value)
+			=> new(RESPType.SimpleString, value);
 	}
 }

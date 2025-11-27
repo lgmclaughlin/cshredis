@@ -4,6 +4,6 @@ namespace CShredis.Core
 {
 	public sealed record RedisObject(RedisType Type, ReadOnlyMemory<byte> Value)
 	{
-		public static readonly RedisObject Null = new(RedisType.Null, ReadOnlyMemory<byte>.Empty);
+		public static readonly RedisObject Null = new(RedisType.Null, null);
 	}
 }
