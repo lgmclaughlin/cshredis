@@ -164,6 +164,80 @@ namespace CShredis.Tests
 			Assert.Equal(@"""jam""", response2);
 		}
 
+		[Fact]
+		public void SetOnList_OverwritesList()
+		{
+			using var stream = GetNewClientStream();
+
+			var request1 = EncodeInput("RPUSH blue one two");
+
+			var response1 = SendRequestAndGetResponse(request1, stream);
+			Assert.Equal("(integer) 2", response1);
+
+			var request2 = EncodeInput("SET blue jam");
+
+			var response2 = SendRequestAndGetResponse(request2, stream);
+			Assert.Equal(@"""OK""", response2);
+		}
+
+		[Fact]
+		public void SetOnListWithGet_ReturnsWrongType()
+		{
+			using var stream = GetNewClientStream();
+
+			var request1 = EncodeInput("RPUSH blue one two");
+
+			var response1 = SendRequestAndGetResponse(request1, stream);
+			Assert.Equal("(integer) 2", response1);
+
+			var request2 = EncodeInput("SET blue jam GET");
+
+			var response2 = SendRequestAndGetResponse(request2, stream);
+			Assert.Equal("(error) WRONGTYPE Operation against a key holding the wrong kind of value", response2);
+		}
+
+		[Fact]
+		public void RPushWithTwoElements_ReturnsTwo()
+		{
+			using var stream = GetNewClientStream();
+
+			var request1 = EncodeInput("RPUSH blue one two");
+
+			var response1 = SendRequestAndGetResponse(request1, stream);
+			Assert.Equal("(integer) 2", response1);
+		}
+
+		[Fact]
+		public void RPushWithTwoElementsTwice_ReturnsTwoAndFour()
+		{
+			using var stream = GetNewClientStream();
+
+			var request1 = EncodeInput("RPUSH blue one two");
+
+			var response1 = SendRequestAndGetResponse(request1, stream);
+			Assert.Equal("(integer) 2", response1);
+
+			var request2 = EncodeInput("RPUSH blue three four");
+
+			var response2 = SendRequestAndGetResponse(request2, stream);
+			Assert.Equal("(integer) 4", response2);
+		}
+
+		public void RPushOnSetString_ReturnsWrongType()
+		{
+			using var stream = GetNewClientStream();
+
+			var request1 = EncodeInput("SET blue jam");
+
+			var response1 = SendRequestAndGetResponse(request1, stream);
+			Assert.Equal(@"""OK""", response1);
+
+			var request2 = EncodeInput("RPUSH blue one two");
+
+			var response2 = SendRequestAndGetResponse(request2, stream);
+			Assert.Equal("(error) WRONGTYPE Operation against a key holding the wrong kind of value", response2);
+		}
+
 		private NetworkStream GetNewClientStream()
 		{
 			var newClient = new TcpClient(CLIENT_HOSTNAME, CLIENT_PORT);
