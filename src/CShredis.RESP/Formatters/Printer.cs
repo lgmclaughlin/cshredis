@@ -10,7 +10,7 @@ namespace CShredis.RESP
 				{ RESPType.Array, PrintArray },
 				{ RESPType.BulkError, PrintDefault },
 				{ RESPType.BulkString, PrintDefault },
-				{ RESPType.Integer, PrintDefault },
+				{ RESPType.Integer, PrintInteger },
 				{ RESPType.NullArray, PrintNull },
 				{ RESPType.NullBulkString, PrintNull },
 				{ RESPType.SimpleError, PrintSimpleError },
@@ -31,15 +31,17 @@ namespace CShredis.RESP
 
 		public static string PrintArray(RESPObject respObject)
 		{
-			var respArray = (RESPArray)respObject;
-			if (respArray.Count == 0) return "(empty array)";
+			if ((respObject.Count ?? 0) == 0) return "(empty array)";
 			
 			var printedArray = new StringBuilder();
-			for (int i = 0; i < respArray.Count; i++)
-				printedArray.AppendLine($"{i + 1}) {Print(respArray.Elements[i])}");
+			for (int i = 0; i < respObject.Count; i++)
+				printedArray.AppendLine($"{i + 1}) {Print(respObject.Elements[i])}");
 
 			return printedArray.ToString();
 		}
+
+		public static string PrintInteger(RESPObject respObject)
+			=> $"(integer) {respObject.ValueString}";
 
 		public static string PrintSimpleError(RESPObject respObject)
 			=> $"(error) {respObject.ValueString}";

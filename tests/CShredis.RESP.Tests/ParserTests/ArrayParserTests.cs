@@ -24,12 +24,14 @@ namespace CShredis.RESP.Tests
 		public void ValidArray_ReturnsArray(string input, int expectedCount)
 		{
 			ReadOnlyMemory<byte> data = Utils.StringToMemoryBytes(input);
+			var expectedType = RESPType.Array;
 			var expectedBytesConsumed = data.Length;
 			var expectedStatus = ParseStatus.Complete;
 			
 			var parseResultArray = (ParseResultArray)_parser.Parse(data);
+			var parsedArray = parseResultArray.ParsedObject!;
 
-			var parsedArray = Assert.IsType<RESPArray>(parseResultArray.ParsedObject);
+			Assert.Equal(expectedType, parsedArray.Type);
 			Assert.Equal(expectedBytesConsumed, parseResultArray.BytesConsumed);
 			Assert.Equal(expectedCount, parsedArray.Count);
 			Assert.Equal(expectedStatus, parseResultArray.Status);
@@ -43,7 +45,7 @@ namespace CShredis.RESP.Tests
 			var expectedBytesConsumed = data.Length;
 			var expectedStatus = ParseStatus.Complete;
 
-			ParseResult parseResult = _parser.Parse(data);
+			var parseResult = _parser.Parse(data);
 			var parsedNullArray = parseResult.ParsedObject!;
 
 			Assert.Equal(expectedType, parsedNullArray.Type);
@@ -55,13 +57,15 @@ namespace CShredis.RESP.Tests
 		public void PartialArrayWithCompletingMessage_ReturnsCompleteArray()
 		{
 			ReadOnlyMemory<byte> dataPartial = Utils.StringToMemoryBytes("*3\r\n$3\r\nhey\r\n$5\r\nth");
+			var expectedType = RESPType.Array;
 			var expectedStatus = ParseStatus.Partial;
 			var expectedBytesConsumed = dataPartial.Length;
 			var expectedCount = 1;
 
 			var partialParseResultArray = (ParseResultArray)_parser.Parse(dataPartial);
+			var parsedPartialArray = partialParseResultArray.ParsedObject!;
 
-			var parsedPartialArray = Assert.IsType<RESPArray>(partialParseResultArray.ParsedObject);
+			Assert.Equal(expectedType, parsedPartialArray.Type);
 			Assert.False(partialParseResultArray.IsComplete);
 			Assert.Equal(expectedBytesConsumed, partialParseResultArray.BytesConsumed);
 			Assert.Equal(expectedCount, parsedPartialArray.Count);
@@ -73,8 +77,9 @@ namespace CShredis.RESP.Tests
 			expectedCount = 3;
 
 			var parseResultArray = (ParseResultArray)_parser.ContinueParse(dataFinal, partialParseResultArray);
+			var parsedArray = parseResultArray.ParsedObject!;
 
-			var parsedArray = Assert.IsType<RESPArray>(parseResultArray.ParsedObject);
+			Assert.Equal(expectedType, parsedArray.Type);
 			Assert.True(parseResultArray.IsComplete);
 			Assert.Equal(expectedBytesConsumed, parseResultArray.BytesConsumed);
 			Assert.Equal(expectedCount, parsedArray.Count);
@@ -85,13 +90,15 @@ namespace CShredis.RESP.Tests
 		public void PartialArrayWithMultipleCompletingMessages_ReturnsCompleteArray()
 		{
 			ReadOnlyMemory<byte> dataPartial = Utils.StringToMemoryBytes("*3\r\n$3\r\nhey\r");
+			var expectedType = RESPType.Array;
 			var expectedStatus = ParseStatus.Partial;
 			var expectedBytesConsumed = dataPartial.Length;
 			var expectedCount = 0;
 
 			var partialParseResultArray1 = (ParseResultArray)_parser.Parse(dataPartial);
+			var parsedPartialArray1 = partialParseResultArray1.ParsedObject!;
 
-			var parsedPartialArray1 = Assert.IsType<RESPArray>(partialParseResultArray1.ParsedObject);
+			Assert.Equal(expectedType, parsedPartialArray1.Type);
 			Assert.False(partialParseResultArray1.IsComplete);
 			Assert.Equal(expectedBytesConsumed, partialParseResultArray1.BytesConsumed);
 			Assert.Equal(expectedCount, parsedPartialArray1.Count);
@@ -103,8 +110,9 @@ namespace CShredis.RESP.Tests
 			expectedCount = 2;
 
 			var partialParseResultArray2 = (ParseResultArray)_parser.ContinueParse(dataPartial, partialParseResultArray1);
+			var parsedPartialArray2 = partialParseResultArray2.ParsedObject!;
 
-			var parsedPartialArray2 = Assert.IsType<RESPArray>(partialParseResultArray2.ParsedObject);
+			Assert.Equal(expectedType, parsedPartialArray2.Type);
 			Assert.False(partialParseResultArray2.IsComplete);
 			Assert.Equal(expectedBytesConsumed, partialParseResultArray2.BytesConsumed);
 			Assert.Equal(expectedCount, parsedPartialArray2.Count);
@@ -116,8 +124,9 @@ namespace CShredis.RESP.Tests
 			expectedCount = 3;
 
 			var parseResultArray = (ParseResultArray)_parser.ContinueParse(dataFinal, partialParseResultArray2);
+			var parsedArray = parseResultArray.ParsedObject!;
 
-			var parsedArray = Assert.IsType<RESPArray>(parseResultArray.ParsedObject);
+			Assert.Equal(expectedType, parsedArray.Type);
 			Assert.True(parseResultArray.IsComplete);
 			Assert.Equal(expectedBytesConsumed, parseResultArray.BytesConsumed);
 			Assert.Equal(expectedCount, parsedArray.Count);
@@ -134,11 +143,13 @@ namespace CShredis.RESP.Tests
 			(string input, int expectedBytesConsumed, int expectedCount)
 		{
 			ReadOnlyMemory<byte> data = Utils.StringToMemoryBytes(input);
+			var expectedType = RESPType.Array;
 			var expectedStatus = ParseStatus.Partial;
 			
 			var parseResultArray = (ParseResultArray)_parser.Parse(data);
+			var parsedArray = parseResultArray.ParsedObject!;
 
-			var parsedArray = Assert.IsType<RESPArray>(parseResultArray.ParsedObject);
+			Assert.Equal(expectedType, parsedArray.Type);
 			Assert.False(parseResultArray.IsComplete);
 			Assert.Equal(expectedBytesConsumed, parseResultArray.BytesConsumed);
 			Assert.Equal(expectedCount, parsedArray.Count);

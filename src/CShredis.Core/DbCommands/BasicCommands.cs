@@ -6,7 +6,7 @@ namespace CShredis.Core.DbCommands
 	{
 		public BasicCommands() { }
 
-		public RedisObject? Set(
+		public (DbResult Result, RedisObject? PreviousValue) Set(
 				RedisDb db,
 				ReadOnlyMemory<byte> key,
 				RedisObject value,
@@ -15,7 +15,12 @@ namespace CShredis.Core.DbCommands
 			RedisObject? previousValue = null;
 			if (setOptions.GetPrevious)
 			{
-				previousValue = Get(db, key) ?? RedisObject.Null;
+				var result = Get(db, key);
+
+				if (result.Result != DbResult.Success)
+					return (result.Result, null);
+
+				previousValue = result.Value ?? RedisObject.Null;
 			}
 
 			db.Db[key] = value;
@@ -30,13 +35,26 @@ namespace CShredis.Core.DbCommands
 				_ = db.Expiry.Remove(key);
 			}
 
-			return previousValue;
+			return (DbResult.Success, previousValue);
 		}
 
 		public void SetExpiry(RedisDb db, ReadOnlyMemory<byte> key, long expires)
 			=> db.Expiry[key] = expires;
 
-		public RedisObject? Get(RedisDb db, ReadOnlyMemory<byte> key)
+		public (DbResult Result, RedisObject? Value) Get(RedisDb db, ReadOnlyMemory<byte> key)
+		{
+			var redisObject = GetAny(db, key);
+			
+			if (redisObject is null)
+				return (DbResult.Success, null);
+
+			if (redisObject.Type != RedisType.String)
+				return (DbResult.WrongType, null);
+
+			return (DbResult.Success, redisObject);
+		}
+
+		public RedisObject? GetAny(RedisDb db, ReadOnlyMemory<byte> key)
 		{
 			if (db.Expiry.TryGetValue(key, out long expires))
 				if (expires <= CurrentTimeMs())

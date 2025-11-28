@@ -23,16 +23,19 @@ namespace CShredis.RESP.Test
 			ReadOnlyMemory<byte> expectedData1 = Utils.StringToMemoryBytes("ECHO");
 			ReadOnlyMemory<byte> expectedData2 = Utils.StringToMemoryBytes("hello");
 			ReadOnlyMemory<byte> expectedData3 = Utils.StringToMemoryBytes("PING");
+			var expectedType = RESPType.Array;
 			var expectedCountAll = 2;
 			var expectedCountFirstArray = 2;
 			var expectedCountSecondArray = 1;
 			var expectedTypeBulkString = RESPType.BulkString;
 
 			var parsedObjects = _dispatcher.ParseStream(data);
+			var parsedArray1 = parsedObjects[0];
+			var parsedArray2 = parsedObjects[1];
 
 			Assert.Equal(expectedCountAll, parsedObjects.Count);
-			var parsedArray1 = Assert.IsType<RESPArray>(parsedObjects[0]);
-			var parsedArray2 = Assert.IsType<RESPArray>(parsedObjects[1]);
+			Assert.Equal(expectedType, parsedArray1.Type);
+			Assert.Equal(expectedType, parsedArray2.Type);
 			Assert.Equal(expectedCountFirstArray, parsedArray1.Count);
 			Assert.Equal(expectedCountSecondArray, parsedArray2.Count);
 			Assert.Equal(expectedTypeBulkString, parsedArray1.Elements[0].Type);
@@ -50,14 +53,16 @@ namespace CShredis.RESP.Test
 			ReadOnlyMemory<byte> data = Utils.StringToMemoryBytes(input);
 			ReadOnlyMemory<byte> expectedData1 = Utils.StringToMemoryBytes("ECHO");
 			ReadOnlyMemory<byte> expectedData2 = Utils.StringToMemoryBytes("hello");
+			var expectedType = RESPType.Array;
 			var expectedCountAll = 1;
 			var expectedCountFirstArray = 2;
 			var expectedTypeBulkString = RESPType.BulkString;
 
 			var parsedObjects = _dispatcher.ParseStream(data);
+			var parsedArray1 = parsedObjects[0];
 
 			Assert.Equal(expectedCountAll, parsedObjects.Count);
-			var parsedArray1 = Assert.IsType<RESPArray>(parsedObjects[0]);
+			Assert.Equal(expectedType, parsedArray1.Type);
 			Assert.Equal(expectedCountFirstArray, parsedArray1.Count);
 			Assert.Equal(expectedTypeBulkString, parsedArray1.Elements[0].Type);
 			Assert.Equal(expectedTypeBulkString, parsedArray1.Elements[1].Type);
@@ -72,14 +77,16 @@ namespace CShredis.RESP.Test
 			ReadOnlyMemory<byte> data1 = Utils.StringToMemoryBytes(input1);
 			ReadOnlyMemory<byte> expectedData1 = Utils.StringToMemoryBytes("ECHO");
 			ReadOnlyMemory<byte> expectedData2 = Utils.StringToMemoryBytes("hello");
+			var expectedType = RESPType.Array;
 			var expectedCountAll1 = 1;
 			var expectedCountFirstArray = 2;
 			var expectedTypeBulkString = RESPType.BulkString;
 
 			var parsedObjects1 = _dispatcher.ParseStream(data1);
+			var parsedArray1 = parsedObjects1[0];
 
 			Assert.Equal(expectedCountAll1, parsedObjects1.Count);
-			var parsedArray1 = Assert.IsType<RESPArray>(parsedObjects1[0]);
+			Assert.Equal(expectedType, parsedArray1.Type);
 			Assert.Equal(expectedCountFirstArray, parsedArray1.Count);
 			Assert.Equal(expectedTypeBulkString, parsedArray1.Elements[0].Type);
 			Assert.Equal(expectedTypeBulkString, parsedArray1.Elements[1].Type);
@@ -92,9 +99,10 @@ namespace CShredis.RESP.Test
 			var expectedCountSecondArray = 1;
 
 			var parsedObjects2 = _dispatcher.ParseStream(data2);
+			var parsedArray2 = parsedObjects2[0];
 			
 			Assert.Equal(expectedCountAll2, parsedObjects2.Count);
-			var parsedArray2 = Assert.IsType<RESPArray>(parsedObjects2[0]);
+			Assert.Equal(expectedType, parsedArray2.Type);
 			Assert.Equal(expectedCountSecondArray, parsedArray2.Count);
 			Assert.Equal(expectedTypeBulkString, parsedArray2.Elements[0].Type);
 			Assert.True(parsedArray2.Elements[0].Value.Span.SequenceEqual(expectedData3.Span));

@@ -19,7 +19,7 @@ namespace CShredis.RESP.Tests
 				new RESPObject(RESPType.BulkString, "hey"),
 				new RESPObject(RESPType.BulkString, "there")
 			};
-			var respArray = new RESPArray(respArrayElements);
+			var respArray = RESPObject.Array(respArrayElements);
 			var encoding = Encoder.EncodeString(respArray);
 
 			Assert.Equal(expectedEncoding, encoding);
@@ -36,7 +36,7 @@ namespace CShredis.RESP.Tests
 				new RESPObject(RESPType.SimpleString, "there"),
 				new RESPObject(RESPType.Integer, "4")
 			};
-			var respArray = new RESPArray(respArrayElements);
+			var respArray = RESPObject.Array(respArrayElements);
 			var encoding = Encoder.EncodeString(respArray);
 
 			Assert.Equal(expectedEncoding, encoding);
@@ -47,7 +47,7 @@ namespace CShredis.RESP.Tests
 		{
 			var expectedEncoding = "*0\r\n";
 
-			var respArray = new RESPArray(new List<RESPObject>());
+			var respArray = RESPObject.Array(new List<RESPObject>());
 			var encoding = Encoder.EncodeString(respArray);
 
 			Assert.Equal(expectedEncoding, encoding);
@@ -58,7 +58,7 @@ namespace CShredis.RESP.Tests
 		{
 			var expectedEncoding = "$5\r\nhello\r\n";
 
-			var encoding = Encoder.EncodeString(new RESPObject(RESPType.BulkString, "hello"));
+			var encoding = Encoder.EncodeString(RESPObject.BulkString("hello"));
 
 			Assert.Equal(expectedEncoding, encoding);
 		}
@@ -68,7 +68,7 @@ namespace CShredis.RESP.Tests
 		{
 			var expectedEncoding = ":6\r\n";
 
-			var encoding = Encoder.EncodeString(new RESPObject(RESPType.Integer, "6"));
+			var encoding = Encoder.EncodeString(RESPObject.Integer("6"));
 
 			Assert.Equal(expectedEncoding, encoding);
 		}
@@ -78,7 +78,7 @@ namespace CShredis.RESP.Tests
 		{
 			var expectedEncoding = "-ERR invalid arguments\r\n";
 
-			var encoding = Encoder.EncodeString(new RESPObject(RESPType.SimpleError, "ERR invalid arguments"));
+			var encoding = Encoder.EncodeString(RESPObject.SimpleError("ERR invalid arguments"));
 
 			Assert.Equal(expectedEncoding, encoding);
 		}
@@ -88,7 +88,7 @@ namespace CShredis.RESP.Tests
 		{
 			var expectedEncoding = "+hello\r\n";
 
-			var encoding = Encoder.EncodeString(new RESPObject(RESPType.SimpleString, "hello"));
+			var encoding = Encoder.EncodeString(RESPObject.SimpleString("hello"));
 
 			Assert.Equal(expectedEncoding, encoding);
 		}

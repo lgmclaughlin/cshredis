@@ -12,6 +12,12 @@ namespace CShredis.Commands
 		public static CommandResult BulkString(ReadOnlyMemory<byte> message)
 			=> new CommandResult(RESPObject.BulkString(message));
 
+		public static CommandResult Integer(string value)
+			=> new CommandResult(RESPObject.Integer(value));
+
+		public static CommandResult Integer(ReadOnlyMemory<byte> value)
+			=> new CommandResult(RESPObject.Integer(value));
+
 		public static CommandResult NullBulkString()
 			=> new CommandResult(RESPObject.NullBulkString());
 

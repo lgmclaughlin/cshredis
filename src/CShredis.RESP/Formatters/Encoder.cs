@@ -36,13 +36,15 @@ namespace CShredis.RESP
 
 		public static string EncodeArray(RESPObject respObject)
 		{
-			var respArray = (RESPArray)respObject;
-			var encodedPrefix = $"{respObject.Type.QualifierString()}{respArray.Count.ToString()}\r\n";
+			if (respObject.Elements is null)
+				throw new InvalidOperationException("Cannot encode RESP array from null elements.");
+
+			var encodedPrefix = $"{respObject.Type.QualifierString()}{respObject.Count.ToString()}\r\n";
 			
 			var encodedValue = new StringBuilder();
 			encodedValue.Append(encodedPrefix);
 
-			foreach (var el in respArray.Elements)
+			foreach (var el in respObject.Elements)
 				encodedValue.Append(EncodeString(el));
 
 			return encodedValue.ToString();

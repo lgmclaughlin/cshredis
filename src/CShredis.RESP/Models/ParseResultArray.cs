@@ -7,18 +7,17 @@ namespace CShredis.RESP
 		public ParseResult? Partial { get; private set; }
 		public int DeclaredLength { get; private set; }
 		
-		public int Count => ParsedArray.Count;
+		public int Count => ParsedObject.Count ?? 0;
 		public bool IsComplete => DeclaredLength == Count; 
-		public RESPArray ParsedArray => (RESPArray)ParsedObject!;
 
-		public ParseResultArray(RESPArray parsedArray)
-			: this(parsedArray, parsedArray.Elements.Count) { }
+		public ParseResultArray(RESPObject parsedArray)
+			: this(parsedArray, parsedArray.Elements!.Count!) { }
 
 		public ParseResultArray(int declaredLength)
-			: this(new RESPArray(declaredLength), declaredLength) { }
+			: this(RESPObject.Array(declaredLength), declaredLength) { }
 
 		public ParseResultArray(
-				RESPArray parsedArray,
+				RESPObject parsedArray,
 				int declaredLength, 
 				int bytesConsumed = 0)
 			: base(parsedArray, bytesConsumed, ParseStatus.Incomplete)
@@ -29,7 +28,7 @@ namespace CShredis.RESP
 
 		public void Add(RESPObject element)
 		{
-			ParsedArray.Add(element);
+			ParsedObject.Add(element);
 			UpdateStatus();
 		}
 

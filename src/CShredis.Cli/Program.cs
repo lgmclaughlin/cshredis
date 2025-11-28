@@ -52,7 +52,7 @@ namespace CShredis.Cli
 				foreach (var token in tokens)
 					tokenElements.Add(RESPObject.BulkString(token));
 
-				var tokenRespArray = new RESPArray(tokenElements);
+				var tokenRespArray = RESPObject.Array(tokenElements);
 				var encodedTokenRespArray = Encoder.Encode(tokenRespArray);
 
 				try

@@ -1,6 +1,7 @@
 using System;
 using CShredis.RESP;
 using CShredis.Core;
+using Utils = CShredis.Commands.CommandUtilities;
 
 namespace CShredis.Commands
 {
@@ -54,11 +55,11 @@ namespace CShredis.Commands
 						arg = arguments[i];
 					}
 
-					var result = optionParser.Parser(setOptions, arg);
-					if (!result.Success)
+					var argParseResult = optionParser.Parser(setOptions, arg);
+					if (!argParseResult.Success)
 					{
 						error = true;
-						errorMessage = result.ErrorMessage;
+						errorMessage = argParseResult.ErrorMessage;
 						break;
 					}
 				}
@@ -74,12 +75,16 @@ namespace CShredis.Commands
 
 			var redisObjectToStore = new RedisObject(RedisType.String, commandEnvelope.ByteArguments[1]);
 			
-			RedisObject? previousValue  = _state.CurrentDb.Set(commandEnvelope.ByteArguments[0], redisObjectToStore, setOptions);
+			var result = _state.CurrentDb.Set(commandEnvelope.ByteArguments[0], redisObjectToStore, setOptions);
+
+			if (!Utils.ValidateDbResult(result.Result, out var commandResultError))
+				return commandResultError;
 
 			var commandResult = CommandResult.SimpleString("OK");
+			var previousValue = result.PreviousValue;
 			if (previousValue is not null)
 				commandResult = (previousValue.Type != RedisType.Null)
-					? CommandResult.BulkString(previousValue.Value)
+					? CommandResult.BulkString(previousValue.AsString())
 					: CommandResult.NullBulkString();
 
 			return commandResult;

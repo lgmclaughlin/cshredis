@@ -8,9 +8,4 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Mono.Posix.NETStandard" Version="1.0.0" />
-    <ProjectReference Include="..\..\src\CShredis.RESP\CShredis.RESP.csproj" />
-  </ItemGroup>
-
 </Project>

@@ -17,39 +17,38 @@ namespace CShredis.Commands
 			_state = state;
 			_handlers = new Dictionary<string, ICommand> (StringComparer.OrdinalIgnoreCase)
 			{
-				{ "PING", new PingCommand() },
-				{ "ECHO", new EchoCommand() },
-				{ "GET",  new GetCommand(_state)  },
-				{ "SET",  new SetCommand(_state)  }
+				{ "PING",  new PingCommand()        },
+				{ "ECHO",  new EchoCommand()        },
+				{ "GET",   new GetCommand(_state)   },
+				{ "SET",   new SetCommand(_state)   },
+				{ "RPUSH", new RPushCommand(_state) }
 			};
 		}
 
 		public CommandResult Execute(RESPObject command)
 		{
-			if (command.Type != RESPType.Array)
+			if (command.Type != RESPType.Array || command.Elements is null)
 				throw new ArgumentException("Invalid command type. Array expected.", nameof(command));
 
-			var commandArray = (RESPArray)command;
-
-			int count = commandArray.Elements.Count;
+			int count = command.Elements.Count;
 			if (count == 0)
-				return new CommandResult(RESPObject.SimpleError("no command to execute"));
+				return CommandResult.SimpleError("no command to execute");
 
-			if (commandArray.Elements.Any(e => e.Type != RESPType.BulkString))
+			if (command.Elements.Any(e => e.Type != RESPType.BulkString))
 				throw new ArgumentException("Invalid command types. Bulk strings expected.", nameof(command));
 
-			var commandName = Encoding.ASCII.GetString(commandArray.Elements[0].Value.Span);
+			var commandName = Encoding.ASCII.GetString(command.Elements[0].Value.Span);
 
 			var argStrings = new string[count - 1];
 			var argBytes = new ReadOnlyMemory<byte>[count - 1];
 			for (int i = 0; i < count - 1; i++)
 			{
-				argStrings[i] = commandArray.Elements[i + 1].ValueString;
-				argBytes[i] = commandArray.Elements[i + 1].Value;
+				argStrings[i] = command.Elements[i + 1].ValueString;
+				argBytes[i] = command.Elements[i + 1].Value;
 			}
 
 			if (!_handlers.TryGetValue(commandName, out var handler))
-				return new CommandResult(RESPObject.SimpleError($"unknown command '{commandName}'"));
+				return CommandResult.SimpleError($"unknown command '{commandName}'");
 
 			var commandEnvelope = new CommandEnvelope(commandName.ToUpper(), argStrings, argBytes);
 
