@@ -56,6 +56,30 @@ namespace CShredis.Core
 			((List<RedisObject>)_value).InsertRange(0, elements);
 		}
 
+		public List<RedisObject> LPop(long howMany)
+		{
+			ValidateList();
+			
+			// TODO: List capacity is max int, custom type later
+			var removed = ((List<RedisObject>)_value).GetRange(0, (int)howMany);
+			((List<RedisObject>)_value).RemoveRange(0, (int)howMany);
+
+			return removed;
+		}
+
+		public List<RedisObject> RPop(long howMany)
+		{
+			ValidateList();
+
+			// TODO: List capacity is max int, custom type later
+			var start = (int)Count! - (int)howMany;
+			var removed = ((List<RedisObject>)_value).GetRange(start, (int)howMany);
+			removed.Reverse();
+			((List<RedisObject>)_value).RemoveRange(start, (int)howMany);
+
+			return removed;
+		}
+
 		private void ValidateList()
 		{
 			if (Type != RedisType.List)

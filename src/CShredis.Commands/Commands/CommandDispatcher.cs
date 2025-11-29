@@ -24,7 +24,9 @@ namespace CShredis.Commands
 				{ "LLEN",   new LLenCommand(_state)          },
 				{ "LPUSH",  new LRPushCommand(_state, false) },
 				{ "RPUSH",  new LRPushCommand(_state, true)  },
-				{ "LRANGE", new LRangeCommand(_state)        }
+				{ "LRANGE", new LRangeCommand(_state)        },
+				{ "LPOP",   new LRPopCommand(_state, false)  },
+				{ "RPOP",   new LRPopCommand(_state, true)   }
 			};
 		}
 

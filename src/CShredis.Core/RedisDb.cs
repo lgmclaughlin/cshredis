@@ -42,6 +42,9 @@ namespace CShredis.Core
 
 		public (DbResult Result, int? NewLength) LRPush(ReadOnlyMemory<byte> key, RedisObject list, bool rPush)
 			=> _listCommands.LRPush(this, key, list, rPush);
+
+		public (DbResult Result, RedisObject? RemovedValues) LRPop(ReadOnlyMemory<byte> key, long howMany, bool rPop)
+			=> _listCommands.LRPop(this, key, howMany, rPop);
 		
 		public (DbResult Result, RedisObject? Value) LRange(ReadOnlyMemory<byte> key, long left, long right)
 			=> _listCommands.LRange(this, key, left, right);

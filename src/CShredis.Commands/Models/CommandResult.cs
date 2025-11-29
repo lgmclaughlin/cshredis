@@ -21,6 +21,9 @@ namespace CShredis.Commands
 		public static CommandResult Integer(ReadOnlyMemory<byte> value)
 			=> new CommandResult(RESPObject.Integer(value));
 
+		public static CommandResult NullArray()
+			=> new CommandResult(RESPObject.NullArray());
+
 		public static CommandResult NullBulkString()
 			=> new CommandResult(RESPObject.NullBulkString());
 

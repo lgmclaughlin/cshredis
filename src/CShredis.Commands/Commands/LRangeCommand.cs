@@ -33,7 +33,7 @@ namespace CShredis.Commands
 			if (!Utils.ValidateDbResult(result.Result, out var commandResultError))
 				return commandResultError;
 
-			return CommandResult.Array(Utils.RESPObjectFrom(result.Value!).Elements);
+			return new CommandResult(Utils.RESPObjectFrom(result.Value!));
 		}
 	}
 }

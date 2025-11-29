@@ -84,5 +84,34 @@ namespace CShredis.Core.DbCommands
 
 			return (DbResult.Success, new RedisObject(range));
 		}
+
+		public (DbResult Result, RedisObject? RemovedValues) LRPop(
+				RedisDb db,
+				ReadOnlyMemory<byte> key,
+				long howMany,
+				bool rPop)
+		{
+			RedisObject? value = db.GetAny(key);
+
+			if (value is null)
+				return (DbResult.Success, null);
+
+			if (value.Type != RedisType.List)
+				return (DbResult.WrongType, null);
+
+			var count = (int)value.Count!;
+			howMany = Math.Min(howMany, count);
+
+			var removed = (rPop)
+				? value.RPop(howMany)
+				: value.LPop(howMany);
+
+			if (value.Count! > 0)
+				db.Set(key, value);
+			else
+				db.Delete(key);
+
+			return (DbResult.Success, new RedisObject(removed));
+		}
 	}
 }
