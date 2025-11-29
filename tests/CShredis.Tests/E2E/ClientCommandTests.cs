@@ -198,6 +198,59 @@ namespace CShredis.Tests
 		}
 
 		[Fact]
+		public void LLenOnEmpty_ReturnsZero()
+		{
+			using var stream = GetNewClientStream();
+
+			var request = EncodeInput("LLEN blue");
+
+			var response = SendRequestAndGetResponse(request, stream);
+			Assert.Equal("(integer) 0", response);
+		}
+
+		[Fact]
+		public void LLenWithTwoElementsThenFour_ReturnsTwoAndFour()
+		{
+			using var stream = GetNewClientStream();
+
+			var request1 = EncodeInput("RPUSH blue one two");
+
+			var response1 = SendRequestAndGetResponse(request1, stream);
+			Assert.Equal("(integer) 2", response1);
+
+			var request2 = EncodeInput("LLEN blue");
+
+			var response2 = SendRequestAndGetResponse(request2, stream);
+			Assert.Equal("(integer) 2", response2);
+
+			var request3 = EncodeInput("RPUSH blue three four");
+
+			var response3 = SendRequestAndGetResponse(request3, stream);
+			Assert.Equal("(integer) 4", response3);
+
+			var request4 = EncodeInput("LLEN blue");
+
+			var response4 = SendRequestAndGetResponse(request4, stream);
+			Assert.Equal("(integer) 4", response4);
+		}
+
+		[Fact]
+		public void LLenOnSetString_ReturnsWrongType()
+		{
+			using var stream = GetNewClientStream();
+
+			var request1 = EncodeInput("SET blue jam");
+
+			var response1 = SendRequestAndGetResponse(request1, stream);
+			Assert.Equal(@"""OK""", response1);
+
+			var request2 = EncodeInput("LLEN blue");
+
+			var response2 = SendRequestAndGetResponse(request2, stream);
+			Assert.Equal("(error) " + ResponseMessages.WrongType_KeyOperationTypeMismatch, response2);
+		}
+
+		[Fact]
 		public void RPushWithTwoElements_ReturnsTwo()
 		{
 			using var stream = GetNewClientStream();
