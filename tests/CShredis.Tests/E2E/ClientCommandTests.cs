@@ -241,6 +241,22 @@ namespace CShredis.Tests
 		}
 
 		[Fact]
+		public void LPushWithTwoElementsThenLRange_ReturnsTwoAndReverseOrder()
+		{
+			using var stream = GetNewClientStream();
+
+			var request1 = EncodeInput("LPUSH blue one two");
+
+			var response1 = SendRequestAndGetResponse(request1, stream);
+			Assert.Equal("(integer) 2", response1);
+
+			var request2 = EncodeInput("LRANGE blue 0 1");
+
+			var response2 = SendRequestAndGetResponse(request2, stream);
+			Assert.Equal("1) \"two\"\n2) \"one\"", response2);
+		}
+
+		[Fact]
 		public void LRangeWithValidRange_ReturnsRange()
 		{
 			using var stream = GetNewClientStream();
