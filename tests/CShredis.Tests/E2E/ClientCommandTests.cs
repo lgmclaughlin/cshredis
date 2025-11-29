@@ -223,6 +223,7 @@ namespace CShredis.Tests
 			Assert.Equal("(integer) 4", response2);
 		}
 
+		[Fact]
 		public void RPushOnSetString_ReturnsWrongType()
 		{
 			using var stream = GetNewClientStream();
@@ -233,6 +234,90 @@ namespace CShredis.Tests
 			Assert.Equal(@"""OK""", response1);
 
 			var request2 = EncodeInput("RPUSH blue one two");
+
+			var response2 = SendRequestAndGetResponse(request2, stream);
+			Assert.Equal("(error) WRONGTYPE Operation against a key holding the wrong kind of value", response2);
+		}
+
+		[Fact]
+		public void LRangeWithValidRange_ReturnsRange()
+		{
+			using var stream = GetNewClientStream();
+
+			var request1 = EncodeInput("RPUSH blue one two");
+
+			var response1 = SendRequestAndGetResponse(request1, stream);
+			Assert.Equal("(integer) 2", response1);
+
+			var request2 = EncodeInput("LRANGE blue 0 1");
+
+			var response2 = SendRequestAndGetResponse(request2, stream);
+			Assert.Equal("1) \"one\"\n2) \"two\"", response2);
+
+			var request3 = EncodeInput("LRANGE blue 1 5");
+
+			var response3 = SendRequestAndGetResponse(request3, stream);
+			Assert.Equal(@"1) ""two""", response3);
+
+			var request4 = EncodeInput("LRANGE blue -6 0");
+
+			var response4 = SendRequestAndGetResponse(request4, stream);
+			Assert.Equal(@"1) ""one""", response4);
+		}
+
+		[Fact]
+		public void LRangeWithValidRangeNegativeIndexes_ReturnsRange()
+		{
+			using var stream = GetNewClientStream();
+
+			var request1 = EncodeInput("RPUSH blue one two");
+
+			var response1 = SendRequestAndGetResponse(request1, stream);
+			Assert.Equal("(integer) 2", response1);
+
+			var request2 = EncodeInput("LRANGE blue -2 -1");
+
+			var response2 = SendRequestAndGetResponse(request2, stream);
+			Assert.Equal("1) \"one\"\n2) \"two\"", response2);
+
+			var request3 = EncodeInput("LRANGE blue -1 -1");
+
+			var response3 = SendRequestAndGetResponse(request3, stream);
+			Assert.Equal(@"1) ""two""", response3);
+		}
+
+		[Fact]
+		public void LRangeWithEmptyRange_ReturnsEmpty()
+		{
+			using var stream = GetNewClientStream();
+
+			var request1 = EncodeInput("RPUSH blue one two");
+
+			var response1 = SendRequestAndGetResponse(request1, stream);
+			Assert.Equal("(integer) 2", response1);
+
+			var request2 = EncodeInput("LRANGE blue 150 200");
+
+			var response2 = SendRequestAndGetResponse(request2, stream);
+			Assert.Equal("(empty array)", response2);
+
+			var request3 = EncodeInput("LRANGE green 0 1");
+
+			var response3 = SendRequestAndGetResponse(request3, stream);
+			Assert.Equal("(empty array)", response2);
+		}
+
+		[Fact]
+		public void LRangeOnSetString_ReturnsWrongType()
+		{
+			using var stream = GetNewClientStream();
+
+			var request1 = EncodeInput("SET blue jam");
+
+			var response1 = SendRequestAndGetResponse(request1, stream);
+			Assert.Equal(@"""OK""", response1);
+
+			var request2 = EncodeInput("LRANGE blue 0 1");
 
 			var response2 = SendRequestAndGetResponse(request2, stream);
 			Assert.Equal("(error) WRONGTYPE Operation against a key holding the wrong kind of value", response2);
