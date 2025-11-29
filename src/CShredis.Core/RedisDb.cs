@@ -37,6 +37,9 @@ namespace CShredis.Core
 		public void Delete(ReadOnlyMemory<byte> key)
 			=> _basicCommands.Delete(this, key);
 
+		public (DbResult Result, int? Length) LLen(ReadOnlyMemory<byte> key)
+			=> _listCommands.LLen(this, key);
+
 		public (DbResult Result, int? NewLength) LRPush(ReadOnlyMemory<byte> key, RedisObject list, bool rPush)
 			=> _listCommands.LRPush(this, key, list, rPush);
 		

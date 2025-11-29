@@ -21,6 +21,7 @@ namespace CShredis.Commands
 				{ "ECHO",   new EchoCommand()                },
 				{ "GET",    new GetCommand(_state)           },
 				{ "SET",    new SetCommand(_state)           },
+				{ "LLEN",   new LLenCommand(_state)          },
 				{ "LPUSH",  new LRPushCommand(_state, false) },
 				{ "RPUSH",  new LRPushCommand(_state, true)  },
 				{ "LRANGE", new LRangeCommand(_state)        }

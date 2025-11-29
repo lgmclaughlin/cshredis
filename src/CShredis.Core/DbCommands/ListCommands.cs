@@ -6,6 +6,21 @@ namespace CShredis.Core.DbCommands
 	{
 		public ListCommands() { }
 
+		public (DbResult Result, int? Length) LLen(
+				RedisDb db,
+				ReadOnlyMemory<byte> key)
+		{
+			RedisObject? value = db.GetAny(key);
+
+			if (value is null)
+				return (DbResult.Success, 0);
+
+			if (value.Type != RedisType.List)
+				return (DbResult.WrongType, null);
+
+			return (DbResult.Success, value.Count);
+		}
+
 		public (DbResult Result, int? NewLength) LRPush(
 				RedisDb db,
 				ReadOnlyMemory<byte> key,
