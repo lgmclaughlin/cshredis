@@ -6,6 +6,9 @@ namespace CShredis.Commands
 	{
 		public bool IsError => Result.IsError;
 
+		public static CommandResult Array(List<RESPObject> values)
+			=> new CommandResult(RESPObject.Array(values));
+
 		public static CommandResult BulkString(string message)
 			=> new CommandResult(RESPObject.BulkString(message));
 

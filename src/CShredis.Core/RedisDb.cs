@@ -39,5 +39,8 @@ namespace CShredis.Core
 
 		public (DbResult Result, int? NewLength) RPush(ReadOnlyMemory<byte> key, RedisObject list)
 			=> _listCommands.RPush(this, key, list);
+		
+		public (DbResult Result, RedisObject? Value) LRange(ReadOnlyMemory<byte> key, long left, long right)
+			=> _listCommands.LRange(this, key, left, right);
 	}
 }

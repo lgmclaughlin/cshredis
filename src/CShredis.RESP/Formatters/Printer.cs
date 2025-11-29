@@ -33,9 +33,13 @@ namespace CShredis.RESP
 		{
 			if ((respObject.Count ?? 0) == 0) return "(empty array)";
 			
+			var count = respObject.Count;
+
 			var printedArray = new StringBuilder();
-			for (int i = 0; i < respObject.Count; i++)
+			for (int i = 0; i < respObject.Count - 1; i++)
 				printedArray.AppendLine($"{i + 1}) {Print(respObject.Elements[i])}");
+
+			printedArray.Append($"{count}) {Print(respObject.Elements[^1])}");
 
 			return printedArray.ToString();
 		}

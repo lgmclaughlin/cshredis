@@ -17,11 +17,12 @@ namespace CShredis.Commands
 			_state = state;
 			_handlers = new Dictionary<string, ICommand> (StringComparer.OrdinalIgnoreCase)
 			{
-				{ "PING",  new PingCommand()        },
-				{ "ECHO",  new EchoCommand()        },
-				{ "GET",   new GetCommand(_state)   },
-				{ "SET",   new SetCommand(_state)   },
-				{ "RPUSH", new RPushCommand(_state) }
+				{ "PING",   new PingCommand()         },
+				{ "ECHO",   new EchoCommand()         },
+				{ "GET",    new GetCommand(_state)    },
+				{ "SET",    new SetCommand(_state)    },
+				{ "RPUSH",  new RPushCommand(_state)  },
+				{ "LRANGE", new LRangeCommand(_state) }
 			};
 		}
 
