@@ -9,7 +9,7 @@ namespace CShredis.Commands
 		public CommandResult Execute(CommandEnvelope commandEnvelope)
 		{
 			if (commandEnvelope.Arguments.Length > 1)
-				return CommandResult.SimpleError("wrong number of arguments for command");
+				return CommandResult.SimpleError("wrong number of arguments for 'ping' command");
 
 			if (commandEnvelope.Arguments.Length == 0)
 				return CommandResult.SimpleString("PONG");

@@ -32,8 +32,7 @@ namespace CShredis.Commands
 			switch (result)
 			{
 				case DbResult.WrongType:
-					commandResultError = CommandResult.SimpleError(
-							"WRONGTYPE Operation against a key holding the wrong kind of value");
+					commandResultError = CommandResult.SimpleError(ResponseMessages.WrongType_KeyOperationTypeMismatch);
 					return false;
 
 				case DbResult.Success:

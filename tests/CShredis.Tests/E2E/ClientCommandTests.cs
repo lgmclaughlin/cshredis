@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using Xunit;
 using System.Net.Sockets;
 using CShredis.Network;
+using CShredis.Commands;
 using CShredis.RESP;
 using Encoder = CShredis.RESP.Encoder;
 
@@ -193,7 +194,7 @@ namespace CShredis.Tests
 			var request2 = EncodeInput("SET blue jam GET");
 
 			var response2 = SendRequestAndGetResponse(request2, stream);
-			Assert.Equal("(error) WRONGTYPE Operation against a key holding the wrong kind of value", response2);
+			Assert.Equal("(error) " + ResponseMessages.WrongType_KeyOperationTypeMismatch, response2);
 		}
 
 		[Fact]
@@ -236,7 +237,7 @@ namespace CShredis.Tests
 			var request2 = EncodeInput("RPUSH blue one two");
 
 			var response2 = SendRequestAndGetResponse(request2, stream);
-			Assert.Equal("(error) WRONGTYPE Operation against a key holding the wrong kind of value", response2);
+			Assert.Equal("(error) " + ResponseMessages.WrongType_KeyOperationTypeMismatch, response2);
 		}
 
 		[Fact]
@@ -320,7 +321,7 @@ namespace CShredis.Tests
 			var request2 = EncodeInput("LRANGE blue 0 1");
 
 			var response2 = SendRequestAndGetResponse(request2, stream);
-			Assert.Equal("(error) WRONGTYPE Operation against a key holding the wrong kind of value", response2);
+			Assert.Equal("(error) " + ResponseMessages.WrongType_KeyOperationTypeMismatch, response2);
 		}
 
 		private NetworkStream GetNewClientStream()

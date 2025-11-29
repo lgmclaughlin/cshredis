@@ -20,12 +20,12 @@ namespace CShredis.Commands
 			var byteArguments = commandEnvelope.ByteArguments;
 			var argCount = byteArguments.Length;
 			if (argCount < 3)
-				return CommandResult.SimpleError("ERR wrong number of arguments for command");
+				return CommandResult.SimpleError(ResponseMessages.Error_WrongNumberOfArguments);
 			
 			long left = -1, right = -1;
 			if (!long.TryParse(arguments[1], out left) ||
 				!long.TryParse(arguments[2], out right))
-				CommandResult.SimpleError("value is not an integer or out of range");
+				CommandResult.SimpleError(ResponseMessages.Error_InvalidInteger);
 
 			(DbResult Result, RedisObject? Value) result =
 				_state.CurrentDb.LRange(commandEnvelope.ByteArguments[0], left, right);

@@ -17,7 +17,7 @@ namespace CShredis.Commands
 		public CommandResult Execute(CommandEnvelope commandEnvelope)
 		{
 			if (commandEnvelope.Arguments.Length != 1)
-				return CommandResult.SimpleError("ERR wrong number of arguments for command");
+				return CommandResult.SimpleError(ResponseMessages.Error_WrongNumberOfArguments);
 			
 			var result = _state.CurrentDb.Get(commandEnvelope.ByteArguments[0]);
 

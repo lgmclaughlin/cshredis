@@ -8,6 +8,7 @@ namespace CShredis.Commands
 	public class SetCommand : ICommand
 	{
 		private readonly RedisState _state;
+		private static readonly string _commandName = "SET";
 		private readonly Dictionary<string, (bool NeedsInput, ParserDelegate Parser)> _optionParsers =
 			new(StringComparer.OrdinalIgnoreCase)
 			{
@@ -28,7 +29,7 @@ namespace CShredis.Commands
 			var arguments = commandEnvelope.Arguments;
 			var argCount = arguments.Length;
 			if (argCount < 2)
-				return CommandResult.SimpleError("ERR wrong number of arguments for command");
+				return CommandResult.SimpleError(ResponseMessages.Error_WrongNumberOfArguments);
 
 			var setOptions = new SetOptions();
 			bool error = false;
@@ -68,7 +69,7 @@ namespace CShredis.Commands
 			if (error)
 			{
 				if (errorMessage is null)
-					errorMessage = "syntax error";
+					errorMessage = ResponseMessages.Error_Syntax;
 
 				return CommandResult.SimpleError(errorMessage);
 			}
@@ -80,7 +81,7 @@ namespace CShredis.Commands
 			if (!Utils.ValidateDbResult(result.Result, out var commandResultError))
 				return commandResultError;
 
-			var commandResult = CommandResult.SimpleString("OK");
+			var commandResult = CommandResult.SimpleString(ResponseMessages.Success_OK);
 			var previousValue = result.PreviousValue;
 			if (previousValue is not null)
 				commandResult = (previousValue.Type != RedisType.Null)
@@ -96,10 +97,10 @@ namespace CShredis.Commands
 				return (false, null);
 
 			if (!long.TryParse(ex, out long exLong))
-				return (false, "value is not an integer or out of range");
+				return (false, ResponseMessages.Error_InvalidInteger);
 
 			if (exLong < 1)
-				return (false, "invalid expire time in 'set' command");
+				return (false, ResponseMessages.Error_InvalidExpireTimeIn(_commandName));
 
 			options.ExpiryMs = exLong * 1000; // sec to ms
 			return (true, null);
@@ -111,10 +112,10 @@ namespace CShredis.Commands
 				return (false, null);
 
 			if (!long.TryParse(px, out long pxLong))
-				return (false, "value is not an integer or out of range");
+				return (false, ResponseMessages.Error_InvalidInteger);
 
 			if (pxLong < 1)
-				return (false, "invalid expire time in 'set' command");
+				return (false, ResponseMessages.Error_InvalidExpireTimeIn(_commandName));
 
 			options.ExpiryMs = pxLong;
 			return (true, null);

@@ -19,7 +19,7 @@ namespace CShredis.Commands
 			var byteArguments = commandEnvelope.ByteArguments;
 			var argCount = byteArguments.Length;
 			if (argCount < 2)
-				return CommandResult.SimpleError("ERR wrong number of arguments for command");
+				return CommandResult.SimpleError(ResponseMessages.Error_WrongNumberOfArguments);
 
 			var elements = new List<RedisObject>(argCount - 1); // ignore key
 			for (int i = 1; i < argCount; i++)
