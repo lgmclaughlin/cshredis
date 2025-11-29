@@ -6,9 +6,17 @@ namespace CShredis.Core.DbCommands
 	{
 		public ListCommands() { }
 
-		public (DbResult Result, int? NewLength) RPush(RedisDb db, ReadOnlyMemory<byte> key, RedisObject list)
+		public (DbResult Result, int? NewLength) LRPush(
+				RedisDb db,
+				ReadOnlyMemory<byte> key,
+				RedisObject list,
+				bool rPush)
 		{
 			var count = list.Count;
+			var listElements = list.AsList();
+			if (!rPush)
+				listElements.Reverse();
+
 			RedisObject? previousValue = db.GetAny(key);
 
 			if (previousValue is null)
@@ -20,13 +28,21 @@ namespace CShredis.Core.DbCommands
 			if (previousValue.Type != RedisType.List)
 				return (DbResult.WrongType, null);
 
-			previousValue.Append(list.AsList());
+			if (rPush)
+				previousValue.Append(listElements);
+			else
+				previousValue.Prepend(listElements);
+
 			db.Set(key, previousValue);
 
 			return (DbResult.Success, previousValue.Count);
 		}
 
-		public (DbResult Result, RedisObject? Value) LRange(RedisDb db, ReadOnlyMemory<byte> key, long left, long right)
+		public (DbResult Result, RedisObject? Value) LRange(
+				RedisDb db,
+				ReadOnlyMemory<byte> key,
+				long left,
+				long right)
 		{
 			RedisObject? currentValue = db.GetAny(key);
 

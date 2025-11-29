@@ -5,13 +5,15 @@ using Utils = CShredis.Commands.CommandUtilities;
 
 namespace CShredis.Commands
 {
-	public class RPushCommand : ICommand
+	public class LRPushCommand : ICommand
 	{
 		private readonly RedisState _state;
+		private bool _rPush;
 
-		public RPushCommand(RedisState state)
+		public LRPushCommand(RedisState state, bool rPush)
 		{
 			_state = state;
+			_rPush = rPush;
 		}
 
 		public CommandResult Execute(CommandEnvelope commandEnvelope)
@@ -28,7 +30,7 @@ namespace CShredis.Commands
 			var redisObjectToStore = new RedisObject(elements);
 			
 			(DbResult Result, int? NewLength) result =
-				_state.CurrentDb.RPush(commandEnvelope.ByteArguments[0], redisObjectToStore);
+				_state.CurrentDb.LRPush(commandEnvelope.ByteArguments[0], redisObjectToStore, _rPush);
 
 			if (!Utils.ValidateDbResult(result.Result, out var commandResultError))
 				return commandResultError;
