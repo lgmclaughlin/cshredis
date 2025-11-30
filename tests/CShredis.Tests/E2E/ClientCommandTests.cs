@@ -36,29 +36,21 @@ namespace CShredis.Tests
 			_serverThread.Join();
 		}
 
+		#region ***** PING *****
+
 		[Fact]
 		public void PingCommand_ReturnsPong()
 		{
 			using var stream = GetNewClientStream();
-
-			var request = EncodeInput("PING");
-			
-			var response = SendRequestAndGetResponse(request, stream);
-			Assert.Equal(@"""PONG""", response);
+			MakeCommandAndExpect(stream, "PING", @"""PONG""");
 		}
 
 		[Fact]
 		public void PingPingCommand_ReturnsPongPong()
 		{
 			using var stream = GetNewClientStream();
-
-			var request = EncodeInput("PING");
-			
-			var response1 = SendRequestAndGetResponse(request, stream);
-			Assert.Equal(@"""PONG""", response1);
-			
-			var response2 = SendRequestAndGetResponse(request, stream);
-			Assert.Equal(@"""PONG""", response2);
+			MakeCommandAndExpect(stream, "PING", @"""PONG""");
+			MakeCommandAndExpect(stream, "PING", @"""PONG""");
 		}
 
 		[Fact]
@@ -66,331 +58,234 @@ namespace CShredis.Tests
 		{
 			using var stream1 = GetNewClientStream();
 			using var stream2 = GetNewClientStream();
-
-			var request = EncodeInput("PING");
-
-			var response1 = SendRequestAndGetResponse(request, stream1);
-			Assert.Equal(@"""PONG""", response1);
-
-			var response2 = SendRequestAndGetResponse(request, stream2);
-			Assert.Equal(@"""PONG""", response2);
+			MakeCommandAndExpect(stream1, "PING", @"""PONG""");
+			MakeCommandAndExpect(stream2, "PING", @"""PONG""");
 		}
+
+		#endregion
+
+		#region ***** SET / GET *****
 
 		[Fact]
 		public void SetCommandAndGetCommand_ReturnOKAndValue()
 		{
 			using var stream = GetNewClientStream();
-
-			var request1 = EncodeInput("SET blue jam");
-
-			var response1 = SendRequestAndGetResponse(request1, stream);
-			Assert.Equal(@"""OK""", response1);
-
-			var request2 = EncodeInput("GET blue");
-
-			var response2 = SendRequestAndGetResponse(request2, stream);
-			Assert.Equal(@"""jam""", response2);
+			MakeCommandAndExpect(stream, "SET blue jam", @"""OK""");
+			MakeCommandAndExpect(stream, "GET blue", @"""jam""");
 		}
 
 		[Fact]
 		public void GetCommand_ReturnsNull()
 		{
 			using var stream = GetNewClientStream();
-
-			var request = EncodeInput("GET blue");
-
-			var response = SendRequestAndGetResponse(request, stream);
-			Assert.Equal("(nil)", response);
+			MakeCommandAndExpect(stream, "GET blue", "(nil)");
 		}
 
 		[Fact]
 		public void SetWithExGetWaitAndGet_ReturnsValueThenNull()
 		{
 			using var stream = GetNewClientStream();
-
-			var request1 = EncodeInput("SET blue jam EX 1");
-
-			var response1 = SendRequestAndGetResponse(request1, stream);
-			Assert.Equal(@"""OK""", response1);
-
-			var request2 = EncodeInput("GET blue");
-
-			var response2 = SendRequestAndGetResponse(request2, stream);
-			Assert.Equal(@"""jam""", response2);
-
+			MakeCommandAndExpect(stream, "SET blue jam EX 1", @"""OK""");
+			MakeCommandAndExpect(stream, "GET blue", @"""jam""");
 			Thread.Sleep(1001);
-
-			var request3 = EncodeInput("GET blue");
-
-			var response3 = SendRequestAndGetResponse(request3, stream);
-			Assert.Equal("(nil)", response3);
+			MakeCommandAndExpect(stream, "GET blue", "(nil)");
 		}
 
 		[Fact]
 		public void SetWithPxGetWaitAndGet_ReturnsValueThenNull()
 		{
 			using var stream = GetNewClientStream();
-
-			var request1 = EncodeInput("SET blue jam PX 1000");
-
-			var response1 = SendRequestAndGetResponse(request1, stream);
-			Assert.Equal(@"""OK""", response1);
-
-			var request2 = EncodeInput("GET blue");
-
-			var response2 = SendRequestAndGetResponse(request2, stream);
-			Assert.Equal(@"""jam""", response2);
-
+			MakeCommandAndExpect(stream, "SET blue jam PX 1000", @"""OK""");
+			MakeCommandAndExpect(stream, "GET blue", @"""jam""");
 			Thread.Sleep(1001);
-
-			var request3 = EncodeInput("GET blue");
-
-			var response3 = SendRequestAndGetResponse(request3, stream);
-			Assert.Equal("(nil)", response3);
+			MakeCommandAndExpect(stream, "GET blue", "(nil)");
 		}
 
 		[Fact]
 		public void SetThenSetWithGet_ReturnsValue()
 		{
 			using var stream = GetNewClientStream();
-
-			var request1 = EncodeInput("SET blue jam GET");
-
-			var response1 = SendRequestAndGetResponse(request1, stream);
-			Assert.Equal("(nil)", response1);
-
-			var request2 = EncodeInput("SET blue velvet GET");
-
-			var response2 = SendRequestAndGetResponse(request2, stream);
-			Assert.Equal(@"""jam""", response2);
+			MakeCommandAndExpect(stream, "SET blue jam GET", "(nil)");
+			MakeCommandAndExpect(stream, "SET blue velvet GET", @"""jam""");
 		}
 
 		[Fact]
 		public void SetOnList_OverwritesList()
 		{
 			using var stream = GetNewClientStream();
-
-			var request1 = EncodeInput("RPUSH blue one two");
-
-			var response1 = SendRequestAndGetResponse(request1, stream);
-			Assert.Equal("(integer) 2", response1);
-
-			var request2 = EncodeInput("SET blue jam");
-
-			var response2 = SendRequestAndGetResponse(request2, stream);
-			Assert.Equal(@"""OK""", response2);
+			MakeCommandAndExpect(stream, "RPUSH blue one two", "(integer) 2");
+			MakeCommandAndExpect(stream, "SET blue jam", @"""OK""");
 		}
 
 		[Fact]
 		public void SetOnListWithGet_ReturnsWrongType()
 		{
 			using var stream = GetNewClientStream();
-
-			var request1 = EncodeInput("RPUSH blue one two");
-
-			var response1 = SendRequestAndGetResponse(request1, stream);
-			Assert.Equal("(integer) 2", response1);
-
-			var request2 = EncodeInput("SET blue jam GET");
-
-			var response2 = SendRequestAndGetResponse(request2, stream);
-			Assert.Equal("(error) " + ResponseMessages.WrongType_KeyOperationTypeMismatch, response2);
+			MakeCommandAndExpect(stream, "RPUSH blue one two", "(integer) 2");
+			MakeCommandAndExpect(stream, "SET blue jam GET", "(error) " + ResponseMessages.WrongType_KeyOperationTypeMismatch);
 		}
 
-		[Fact]
-		public void LLenOnEmpty_ReturnsZero()
-		{
-			using var stream = GetNewClientStream();
+		#endregion
 
-			var request = EncodeInput("LLEN blue");
-
-			var response = SendRequestAndGetResponse(request, stream);
-			Assert.Equal("(integer) 0", response);
-		}
+		#region ***** LPUSH / RPUSH *****
 
 		[Fact]
-		public void LLenWithTwoElementsThenFour_ReturnsTwoAndFour()
+		public void LPushWithTwoElementsThenLRange_ReturnsTwoAndReverseOrder()
 		{
 			using var stream = GetNewClientStream();
-
-			var request1 = EncodeInput("RPUSH blue one two");
-
-			var response1 = SendRequestAndGetResponse(request1, stream);
-			Assert.Equal("(integer) 2", response1);
-
-			var request2 = EncodeInput("LLEN blue");
-
-			var response2 = SendRequestAndGetResponse(request2, stream);
-			Assert.Equal("(integer) 2", response2);
-
-			var request3 = EncodeInput("RPUSH blue three four");
-
-			var response3 = SendRequestAndGetResponse(request3, stream);
-			Assert.Equal("(integer) 4", response3);
-
-			var request4 = EncodeInput("LLEN blue");
-
-			var response4 = SendRequestAndGetResponse(request4, stream);
-			Assert.Equal("(integer) 4", response4);
-		}
-
-		[Fact]
-		public void LLenOnSetString_ReturnsWrongType()
-		{
-			using var stream = GetNewClientStream();
-
-			var request1 = EncodeInput("SET blue jam");
-
-			var response1 = SendRequestAndGetResponse(request1, stream);
-			Assert.Equal(@"""OK""", response1);
-
-			var request2 = EncodeInput("LLEN blue");
-
-			var response2 = SendRequestAndGetResponse(request2, stream);
-			Assert.Equal("(error) " + ResponseMessages.WrongType_KeyOperationTypeMismatch, response2);
+			MakeCommandAndExpect(stream, "LPUSH blue one two", "(integer) 2");
+			MakeCommandAndExpect(stream, "LRANGE blue 0 1", "1) \"two\"\n2) \"one\"");
 		}
 
 		[Fact]
 		public void RPushWithTwoElements_ReturnsTwo()
 		{
 			using var stream = GetNewClientStream();
-
-			var request1 = EncodeInput("RPUSH blue one two");
-
-			var response1 = SendRequestAndGetResponse(request1, stream);
-			Assert.Equal("(integer) 2", response1);
+			MakeCommandAndExpect(stream, "RPUSH blue one two", "(integer) 2");
 		}
 
 		[Fact]
 		public void RPushWithTwoElementsTwice_ReturnsTwoAndFour()
 		{
 			using var stream = GetNewClientStream();
-
-			var request1 = EncodeInput("RPUSH blue one two");
-
-			var response1 = SendRequestAndGetResponse(request1, stream);
-			Assert.Equal("(integer) 2", response1);
-
-			var request2 = EncodeInput("RPUSH blue three four");
-
-			var response2 = SendRequestAndGetResponse(request2, stream);
-			Assert.Equal("(integer) 4", response2);
+			MakeCommandAndExpect(stream, "RPUSH blue one two", "(integer) 2");
+			MakeCommandAndExpect(stream, "RPUSH blue three four", "(integer) 4");
 		}
 
 		[Fact]
 		public void RPushOnSetString_ReturnsWrongType()
 		{
 			using var stream = GetNewClientStream();
+			MakeCommandAndExpect(stream, "SET blue jam", @"""OK""");
+			MakeCommandAndExpect(stream, "RPUSH blue one two", "(error) " + ResponseMessages.WrongType_KeyOperationTypeMismatch);
+		}
 
-			var request1 = EncodeInput("SET blue jam");
+		#endregion
 
-			var response1 = SendRequestAndGetResponse(request1, stream);
-			Assert.Equal(@"""OK""", response1);
+		#region ***** LLEN *****
 
-			var request2 = EncodeInput("RPUSH blue one two");
-
-			var response2 = SendRequestAndGetResponse(request2, stream);
-			Assert.Equal("(error) " + ResponseMessages.WrongType_KeyOperationTypeMismatch, response2);
+		[Fact]
+		public void LLenOnEmpty_ReturnsZero()
+		{
+			using var stream = GetNewClientStream();
+			MakeCommandAndExpect(stream, "LLEN blue", "(integer) 0");
 		}
 
 		[Fact]
-		public void LPushWithTwoElementsThenLRange_ReturnsTwoAndReverseOrder()
+		public void LLenWithTwoElementsThenFour_ReturnsTwoAndFour()
 		{
 			using var stream = GetNewClientStream();
-
-			var request1 = EncodeInput("LPUSH blue one two");
-
-			var response1 = SendRequestAndGetResponse(request1, stream);
-			Assert.Equal("(integer) 2", response1);
-
-			var request2 = EncodeInput("LRANGE blue 0 1");
-
-			var response2 = SendRequestAndGetResponse(request2, stream);
-			Assert.Equal("1) \"two\"\n2) \"one\"", response2);
+			MakeCommandAndExpect(stream, "RPUSH blue one two", "(integer) 2");
+			MakeCommandAndExpect(stream, "LLEN blue", "(integer) 2");
+			MakeCommandAndExpect(stream, "RPUSH blue three four", "(integer) 4");
+			MakeCommandAndExpect(stream, "LLEN blue", "(integer) 4");
 		}
+
+		[Fact]
+		public void LLenOnSetString_ReturnsWrongType()
+		{
+			using var stream = GetNewClientStream();
+			MakeCommandAndExpect(stream, "SET blue jam", @"""OK""");
+			MakeCommandAndExpect(stream, "LLEN blue", "(error) " + ResponseMessages.WrongType_KeyOperationTypeMismatch);
+		}
+
+		#endregion
+
+		#region ***** LRANGE *****
 
 		[Fact]
 		public void LRangeWithValidRange_ReturnsRange()
 		{
 			using var stream = GetNewClientStream();
-
-			var request1 = EncodeInput("RPUSH blue one two");
-
-			var response1 = SendRequestAndGetResponse(request1, stream);
-			Assert.Equal("(integer) 2", response1);
-
-			var request2 = EncodeInput("LRANGE blue 0 1");
-
-			var response2 = SendRequestAndGetResponse(request2, stream);
-			Assert.Equal("1) \"one\"\n2) \"two\"", response2);
-
-			var request3 = EncodeInput("LRANGE blue 1 5");
-
-			var response3 = SendRequestAndGetResponse(request3, stream);
-			Assert.Equal(@"1) ""two""", response3);
-
-			var request4 = EncodeInput("LRANGE blue -6 0");
-
-			var response4 = SendRequestAndGetResponse(request4, stream);
-			Assert.Equal(@"1) ""one""", response4);
+			MakeCommandAndExpect(stream, "RPUSH blue one two", "(integer) 2");
+			MakeCommandAndExpect(stream, "LRANGE blue 0 1", "1) \"one\"\n2) \"two\"");
+			MakeCommandAndExpect(stream, "LRANGE blue 1 5", @"1) ""two""");
+			MakeCommandAndExpect(stream, "LRANGE blue -6 0", @"1) ""one""");
 		}
 
 		[Fact]
 		public void LRangeWithValidRangeNegativeIndexes_ReturnsRange()
 		{
 			using var stream = GetNewClientStream();
-
-			var request1 = EncodeInput("RPUSH blue one two");
-
-			var response1 = SendRequestAndGetResponse(request1, stream);
-			Assert.Equal("(integer) 2", response1);
-
-			var request2 = EncodeInput("LRANGE blue -2 -1");
-
-			var response2 = SendRequestAndGetResponse(request2, stream);
-			Assert.Equal("1) \"one\"\n2) \"two\"", response2);
-
-			var request3 = EncodeInput("LRANGE blue -1 -1");
-
-			var response3 = SendRequestAndGetResponse(request3, stream);
-			Assert.Equal(@"1) ""two""", response3);
+			MakeCommandAndExpect(stream, "RPUSH blue one two", "(integer) 2");
+			MakeCommandAndExpect(stream, "LRANGE blue -2 -1", "1) \"one\"\n2) \"two\"");
+			MakeCommandAndExpect(stream, "LRANGE blue -1 -1", @"1) ""two""");
 		}
 
 		[Fact]
 		public void LRangeWithEmptyRange_ReturnsEmpty()
 		{
 			using var stream = GetNewClientStream();
-
-			var request1 = EncodeInput("RPUSH blue one two");
-
-			var response1 = SendRequestAndGetResponse(request1, stream);
-			Assert.Equal("(integer) 2", response1);
-
-			var request2 = EncodeInput("LRANGE blue 150 200");
-
-			var response2 = SendRequestAndGetResponse(request2, stream);
-			Assert.Equal("(empty array)", response2);
-
-			var request3 = EncodeInput("LRANGE green 0 1");
-
-			var response3 = SendRequestAndGetResponse(request3, stream);
-			Assert.Equal("(empty array)", response2);
+			MakeCommandAndExpect(stream, "LRANGE blue 150 200", "(empty array)");
+			MakeCommandAndExpect(stream, "LRANGE blue 0 1", "(empty array)");
 		}
 
 		[Fact]
 		public void LRangeOnSetString_ReturnsWrongType()
 		{
 			using var stream = GetNewClientStream();
+			MakeCommandAndExpect(stream, "SET blue jam", @"""OK""");
+			MakeCommandAndExpect(stream, "LRANGE blue 0 1", "(error) " + ResponseMessages.WrongType_KeyOperationTypeMismatch);
+		}
 
-			var request1 = EncodeInput("SET blue jam");
+		#endregion
 
-			var response1 = SendRequestAndGetResponse(request1, stream);
-			Assert.Equal(@"""OK""", response1);
+		#region ***** LPOP / RPOP *****
 
-			var request2 = EncodeInput("LRANGE blue 0 1");
+		[Fact]
+		public void LPop_ReturnsElementAndRemovesFromList()
+		{
+			using var stream = GetNewClientStream();
+			MakeCommandAndExpect(stream, "RPUSH blue one two", "(integer) 2");
+			MakeCommandAndExpect(stream, "LPOP blue", @"""one""");
+			MakeCommandAndExpect(stream, "LRANGE blue 0 0", @"1) ""two""");
+		}
 
-			var response2 = SendRequestAndGetResponse(request2, stream);
-			Assert.Equal("(error) " + ResponseMessages.WrongType_KeyOperationTypeMismatch, response2);
+		[Fact]
+		public void LPopTwoElements_ReturnsTwoAndRemovesFromList()
+		{
+			using var stream = GetNewClientStream();
+			MakeCommandAndExpect(stream, "RPUSH blue one two three", "(integer) 3");
+			MakeCommandAndExpect(stream, "LPOP blue 2", "1) \"one\"\n2) \"two\"");
+			MakeCommandAndExpect(stream, "LRANGE blue 0 0", @"1) ""three""");
+		}
+
+		[Fact]
+		public void RPop_ReturnsElementAndRemovesFromList()
+		{
+			using var stream = GetNewClientStream();
+			MakeCommandAndExpect(stream, "RPUSH blue one two", "(integer) 2");
+			MakeCommandAndExpect(stream, "RPOP blue", @"""two""");
+			MakeCommandAndExpect(stream, "LRANGE blue 0 0", @"1) ""one""");
+		}
+
+		[Fact]
+		public void RPopTwoElements_ReturnsTwoReverseOrderAndRemovesFromList()
+		{
+			using var stream = GetNewClientStream();
+			MakeCommandAndExpect(stream, "RPUSH blue one two three", "(integer) 3");
+			MakeCommandAndExpect(stream, "RPOP blue 2", "1) \"three\"\n2) \"two\"");
+			MakeCommandAndExpect(stream, "LRANGE blue 0 0", @"1) ""one""");
+		}
+
+		[Fact]
+		public void LPopAndRPopOnSetString_ReturnWrongType()
+		{
+			using var stream = GetNewClientStream();
+			MakeCommandAndExpect(stream, "SET blue jam", @"""OK""");
+			MakeCommandAndExpect(stream, "LPOP blue", "(error) " + ResponseMessages.WrongType_KeyOperationTypeMismatch);
+			MakeCommandAndExpect(stream, "RPOP blue", "(error) " + ResponseMessages.WrongType_KeyOperationTypeMismatch);
+		}
+
+		#endregion
+
+		#region ***** Helpers *****
+
+		private void MakeCommandAndExpect(NetworkStream stream, string command, string expect)
+		{
+			var request = EncodeInput(command);
+			var response = SendRequestAndGetResponse(request, stream);
+			Assert.Equal(response, expect);
 		}
 
 		private NetworkStream GetNewClientStream()
@@ -441,5 +336,7 @@ namespace CShredis.Tests
 			var responseRespObject = _parseDispatcher.Parse(response).ParsedObject;
 			return Printer.Print(responseRespObject!);
 		}
+
+		#endregion
 	}
 }

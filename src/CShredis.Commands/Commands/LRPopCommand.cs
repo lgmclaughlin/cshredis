@@ -37,7 +37,11 @@ namespace CShredis.Commands
 			if (result.RemovedValues is null)
 				return CommandResult.NullArray();
 
-			return new CommandResult(Utils.RESPObjectFrom(result.RemovedValues!));
+			var respObject = (howMany > 1)
+				? Utils.RESPObjectFrom(result.RemovedValues!)
+				: Utils.RESPObjectFrom(result.RemovedValues!.AsList().First());
+
+			return new CommandResult(respObject);
 		}
 	}
 }
